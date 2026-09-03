@@ -2,6 +2,7 @@ package com.mira.factions.gui;
 
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.Faction;
+import com.mira.factions.model.UpgradeType;
 import com.mira.factions.service.FactionService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -12,7 +13,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 public final class FactionGuiService {
-    public record Holder() implements InventoryHolder {
+    public enum Menu { UPGRADES, VAULT }
+    public record Holder(Menu menu, UUID factionId) implements InventoryHolder {
         @Override public Inventory getInventory() { return null; }
     }
 
@@ -24,51 +26,68 @@ public final class FactionGuiService {
         this.service = service;
     }
 
-    public void open(Player player) {
-        Inventory inventory = Bukkit.createInventory(new Holder(), 27, plugin.component("&5Mira Factions"));
+    public void openUpgrades(Player player) {
+        Faction faction = service.of(player.getUniqueId());
+        if (faction == null) { plugin.msg(player, "&cYou are not in a faction."); return; }
+        Inventory inventory = Bukkit.createInventory(new Holder(Menu.UPGRADES, faction.id()), 54, plugin.component("&5Faction Upgrades"));
         ItemStack filler = item(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());
         filler.editMeta(meta -> meta.setEnchantmentGlintOverride(true));
-        for (int slot = 0; slot < inventory.getSize(); slot++) inventory.setItem(slot, filler.clone());
+        for (int i = 0; i < inventory.getSize(); i++) inventory.setItem(i, filler.clone());
 
+        int[] slots = {10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30};
+        UpgradeType[] types = UpgradeType.values();
+        for (int i = 0; i < Math.min(slots.length, types.length); i++) {
+            UpgradeType type = types[i];
+            int level = faction.upgrade(type);
+            boolean max = level >= type.maxLevel();
+            List<String> lore = new ArrayList<>();
+            lore.add("&7Level: &f" + level + "/" + type.maxLevel());
+            lore.add("&7Faction Bank: &f" + plugin.economy().format(faction.bankBalance()));
+            if (max) lore.add("&aMAX LEVEL");
+            else {
+                lore.add("&7Next Cost: &6" + plugin.economy().format(service.upgradeCost(faction, type)));
+                lore.add("");
+                lore.add("&aClick to purchase next level");
+            }
+            inventory.setItem(slots[i], item(type.icon(), "&d" + type.display(), lore));
+        }
+        inventory.setItem(49, item(Material.EMERALD, "&aFaction Bank", List.of("&7Balance: &f" + plugin.economy().format(faction.bankBalance()), "&7Use &f/f money &7to deposit or withdraw")));
+        player.openInventory(inventory);
+    }
+
+    public void openVault(Player player) {
         Faction faction = service.of(player.getUniqueId());
-        if (faction == null) {
-            inventory.setItem(11, item(Material.EMERALD, "&aCreate Faction", List.of("&7Click, then type the faction name in chat")));
-            inventory.setItem(15, item(Material.PAPER, "&eJoin Faction", List.of("&7Use &f/f join <name>", "&7after receiving an invite")));
-        } else {
-            inventory.setItem(4, item(Material.PLAYER_HEAD, "&d" + faction.name(), List.of(
-                    "&7Rank: &f" + faction.rank(player.getUniqueId()),
-                    "&7Faction Power: &f" + String.format(Locale.US, "%.1f", service.factionPower(faction)),
-                    "&7Your Power: &f" + String.format(Locale.US, "%.1f", service.power(player.getUniqueId())),
-                    "&7Claims: &f" + faction.claims().size() + "/" + service.maxClaims(faction))));
-            inventory.setItem(10, item(Material.GOLDEN_SHOVEL, "&aClaim Current Chunk", List.of("&7Officer+")));
-            inventory.setItem(11, item(Material.FLINT, "&cUnclaim Current Chunk", List.of("&7Officer+")));
-            inventory.setItem(12, item(Material.ENDER_PEARL, "&bFaction Home", List.of("&7Teleport to your faction home")));
-            inventory.setItem(13, item(Material.RECOVERY_COMPASS, "&bSet Faction Home", List.of("&7Officer+", "&7Must be inside faction land")));
-            inventory.setItem(14, item(Material.WRITABLE_BOOK,
-                    service.factionChat(player.getUniqueId()) ? "&aFaction Chat: ON" : "&7Faction Chat: OFF",
-                    List.of("&7Click to toggle")));
-            inventory.setItem(15, item(Material.IRON_CHESTPLATE, "&dMembers", memberLore(faction)));
-            inventory.setItem(16, item(Material.DIAMOND_SWORD, "&cDiplomacy", List.of(
-                    "&7/f ally <faction>",
-                    "&7/f enemy <faction>",
-                    "&7/f neutral <faction>")));
-            inventory.setItem(22, item(Material.OAK_DOOR, "&cLeave Faction", List.of("&7Leader with members must transfer or disband")));
+        if (faction == null) { plugin.msg(player, "&cYou are not in a faction."); return; }
+        if (!service.hasPermission(player, com.mira.factions.model.FactionPermission.VAULT)) { plugin.msg(player, "&cYou do not have faction permission to use the vault."); return; }
+        Inventory inventory = Bukkit.createInventory(new Holder(Menu.VAULT, faction.id()), 54, plugin.component("&5" + faction.name() + " Vault"));
+        ItemStack[] saved = service.vaultContents(faction);
+        int slots = service.vaultSlots(faction);
+        for (int i = 0; i < 54; i++) {
+            if (i < slots) inventory.setItem(i, saved[i]);
+            else inventory.setItem(i, lockedSlot());
         }
         player.openInventory(inventory);
     }
 
-    private List<String> memberLore(Faction faction) {
-        List<String> lore = new ArrayList<>();
-        faction.members().entrySet().stream()
-                .sorted((a, b) -> Integer.compare(b.getValue().weight(), a.getValue().weight()))
-                .limit(8)
-                .forEach(entry -> {
-                    String name = Optional.ofNullable(Bukkit.getOfflinePlayer(entry.getKey()).getName())
-                            .orElse(entry.getKey().toString().substring(0, 8));
-                    lore.add("&7" + name + " &8- &f" + entry.getValue());
-                });
-        if (faction.members().size() > 8) lore.add("&8...and " + (faction.members().size() - 8) + " more");
-        return lore;
+    public void saveVault(Inventory inventory, Faction faction) {
+        if (faction == null || !(inventory.getHolder() instanceof Holder holder) || holder.menu() != Menu.VAULT) return;
+        int allowed = service.vaultSlots(faction);
+        ItemStack[] contents = inventory.getContents().clone();
+        for (int i = allowed; i < 54; i++) contents[i] = null;
+        service.saveVault(faction, contents);
+    }
+
+    public UpgradeType upgradeForSlot(int slot) {
+        int[] slots = {10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30};
+        UpgradeType[] types = UpgradeType.values();
+        for (int i = 0; i < Math.min(slots.length, types.length); i++) if (slots[i] == slot) return types[i];
+        return null;
+    }
+
+    private ItemStack lockedSlot() {
+        ItemStack item = item(Material.BARRIER, "&cLocked Vault Slot", List.of("&7Purchase the Vault upgrade", "&7with &f/f upgrades&7."));
+        item.editMeta(meta -> meta.setEnchantmentGlintOverride(true));
+        return item;
     }
 
     private ItemStack item(Material material, String name, List<String> lore) {
