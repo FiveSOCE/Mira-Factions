@@ -5,26 +5,25 @@ import com.mira.factions.gui.FactionGuiService;
 import com.mira.factions.model.*;
 import com.mira.factions.service.FactionService;
 import io.papermc.paper.event.player.AsyncChatEvent;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.*;
-import org.bukkit.block.Container;
+import org.bukkit.block.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.*;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.*;
-import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class FactionListener implements Listener {
     private final MiraFactionsPlugin plugin;
     private final FactionService service;
     private final FactionGuiService gui;
     private final Map<UUID, String> territory = new HashMap<>();
-    private final Set<UUID> createPending = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, String> zone = new HashMap<>();
 
     public FactionListener(MiraFactionsPlugin plugin, FactionService service, FactionGuiService gui) {
         this.plugin = plugin;
@@ -33,110 +32,135 @@ public final class FactionListener implements Listener {
     }
 
     @EventHandler
-    public void onGui(InventoryClickEvent event) {
-        if (!(event.getView().getTopInventory().getHolder() instanceof FactionGuiService.Holder)) return;
+    public void onGuiClick(InventoryClickEvent event) {
+        if (!(event.getView().getTopInventory().getHolder() instanceof FactionGuiService.Holder holder)) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        event.setCancelled(true);
-        int slot = event.getRawSlot();
-        Faction faction = service.of(player.getUniqueId());
+        Faction faction = service.byId(holder.factionId());
+        if (faction == null || service.of(player.getUniqueId()) != faction) { event.setCancelled(true); player.closeInventory(); return; }
 
-        if (faction == null) {
-            if (slot == 11) {
-                createPending.add(player.getUniqueId());
-                player.closeInventory();
-                plugin.msg(player, "&eType your new faction name in chat, or &ccancel&e.");
-            }
+        if (holder.menu() == FactionGuiService.Menu.UPGRADES) {
+            event.setCancelled(true);
+            if (event.getRawSlot() < 0 || event.getRawSlot() >= event.getView().getTopInventory().getSize()) return;
+            UpgradeType type = gui.upgradeForSlot(event.getRawSlot());
+            if (type == null) return;
+            respond(player, service.buyUpgrade(player, type));
+            gui.openUpgrades(player);
             return;
         }
 
-        switch (slot) {
-            case 10 -> respond(player, service.claim(player));
-            case 11 -> respond(player, service.unclaim(player));
-            case 12 -> respond(player, service.home(player));
-            case 13 -> respond(player, service.setHome(player));
-            case 14 -> {
-                service.toggleFactionChat(player.getUniqueId());
-                gui.open(player);
-            }
-            case 22 -> respond(player, service.leave(player));
-            default -> { }
+        int allowed = service.vaultSlots(faction);
+        int raw = event.getRawSlot();
+        if (raw >= 0 && raw < 54 && raw >= allowed) event.setCancelled(true);
+        if (event.isShiftClick() && event.getClickedInventory() != null && event.getClickedInventory() == player.getInventory()) {
+            int firstEmpty = firstEmptyVault(event.getView().getTopInventory(), allowed);
+            if (firstEmpty == -1) event.setCancelled(true);
         }
+    }
+
+    @EventHandler
+    public void onGuiDrag(InventoryDragEvent event) {
+        if (!(event.getView().getTopInventory().getHolder() instanceof FactionGuiService.Holder holder) || holder.menu() != FactionGuiService.Menu.VAULT) return;
+        Faction faction = service.byId(holder.factionId());
+        if (faction == null) { event.setCancelled(true); return; }
+        int allowed = service.vaultSlots(faction);
+        for (int raw : event.getRawSlots()) if (raw < 54 && raw >= allowed) { event.setCancelled(true); return; }
+    }
+
+    @EventHandler
+    public void onGuiClose(InventoryCloseEvent event) {
+        if (!(event.getInventory().getHolder() instanceof FactionGuiService.Holder holder) || holder.menu() != FactionGuiService.Menu.VAULT) return;
+        Faction faction = service.byId(holder.factionId());
+        gui.saveVault(event.getInventory(), faction);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
-        if (createPending.remove(player.getUniqueId())) {
+        ChatMode mode = service.chatMode(player.getUniqueId());
+        if (mode != ChatMode.PUBLIC) {
+            if (service.of(player.getUniqueId()) == null) { service.chatMode(player.getUniqueId(), ChatMode.PUBLIC); return; }
             event.setCancelled(true);
-            String text = PlainTextComponentSerializer.plainText().serialize(event.message()).trim();
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                if (text.equalsIgnoreCase("cancel")) {
-                    plugin.msg(player, "&cFaction creation cancelled.");
-                    gui.open(player);
-                } else {
-                    respond(player, service.create(player, text));
-                }
-            });
+            Bukkit.getScheduler().runTask(plugin, () -> service.sendChannel(player, event.message()));
             return;
         }
-
-        if (!service.factionChat(player.getUniqueId())) return;
-        Faction faction = service.of(player.getUniqueId());
-        if (faction == null) return;
-        event.setCancelled(true);
-        Component message = plugin.component("&d[F] &f" + player.getName() + "&7: ").append(event.message());
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            for (UUID uuid : faction.members().keySet()) {
-                Player member = Bukkit.getPlayer(uuid);
-                if (member != null) member.sendMessage(message);
-            }
-        });
+        if (plugin.getConfig().getBoolean("chat.public-faction-tag", true) && service.of(player.getUniqueId()) != null) {
+            event.message(plugin.component("&7[&d" + service.of(player.getUniqueId()).name() + "&7] &r").append(event.message()));
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onBreak(BlockBreakEvent event) {
-        if (plugin.getConfig().getBoolean("claims.protect-build", true)
-                && !service.canBuild(event.getPlayer(), event.getBlock().getLocation())) deny(event, event.getPlayer());
+        if (!service.can(event.getPlayer(), event.getBlock().getLocation(), FactionPermission.DESTROY)) deny(event, event.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent event) {
-        if (plugin.getConfig().getBoolean("claims.protect-build", true)
-                && !service.canBuild(event.getPlayer(), event.getBlock().getLocation())) deny(event, event.getPlayer());
+        if (!service.can(event.getPlayer(), event.getBlock().getLocation(), FactionPermission.BUILD)) deny(event, event.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onBucketEmpty(PlayerBucketEmptyEvent event) {
-        if (!service.canBuild(event.getPlayer(), event.getBlock().getLocation())) deny(event, event.getPlayer());
+        if (!service.can(event.getPlayer(), event.getBlock().getLocation(), FactionPermission.BUILD)) deny(event, event.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onBucketFill(PlayerBucketFillEvent event) {
-        if (!service.canBuild(event.getPlayer(), event.getBlock().getLocation())) deny(event, event.getPlayer());
+        if (!service.can(event.getPlayer(), event.getBlock().getLocation(), FactionPermission.DESTROY)) deny(event, event.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
-        if (event.getClickedBlock() == null || service.canBuild(event.getPlayer(), event.getClickedBlock().getLocation())) return;
-        if (event.getClickedBlock().getState() instanceof Container
-                && plugin.getConfig().getBoolean("claims.protect-containers", true)) {
-            deny(event, event.getPlayer());
-        } else if (plugin.getConfig().getBoolean("claims.protect-interactions", true)
-                && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            deny(event, event.getPlayer());
-        }
+        Block block = event.getClickedBlock();
+        if (block == null || event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        FactionPermission permission = interactionPermission(block);
+        if (!service.can(event.getPlayer(), block.getLocation(), permission)) deny(event, event.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onExplosion(EntityExplodeEvent event) {
-        if (!plugin.getConfig().getBoolean("claims.protect-explosions", true)) return;
-        event.blockList().removeIf(block -> service.owner(block.getLocation()) != null);
+        event.blockList().removeIf(block -> protectExplosion(block.getLocation()));
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockExplosion(BlockExplodeEvent event) {
-        if (!plugin.getConfig().getBoolean("claims.protect-explosions", true)) return;
-        event.blockList().removeIf(block -> service.owner(block.getLocation()) != null);
+        event.blockList().removeIf(block -> protectExplosion(block.getLocation()));
+    }
+
+    private boolean protectExplosion(Location location) {
+        TerritoryType type = service.territoryType(location);
+        if (type == TerritoryType.SAFEZONE) return true;
+        if (type == TerritoryType.WARZONE || type == TerritoryType.WILDERNESS) return false;
+        Faction owner = service.owner(location);
+        if (owner == null) return false;
+        if (owner.peaceful() || service.graceActive() || service.shielded(owner)) return true;
+        return !service.raidable(owner) || !plugin.getConfig().getBoolean("raiding.allow-explosions", true);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPistonExtend(BlockPistonExtendEvent event) {
+        Location source = event.getBlock().getLocation();
+        for (Block block : event.getBlocks()) {
+            Location destination = block.getRelative(event.getDirection()).getLocation();
+            if (!sameTerritory(source, destination)) { event.setCancelled(true); return; }
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPistonRetract(BlockPistonRetractEvent event) {
+        Location source = event.getBlock().getLocation();
+        for (Block block : event.getBlocks()) if (!sameTerritory(source, block.getLocation())) { event.setCancelled(true); return; }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onFlow(BlockFromToEvent event) {
+        if (!sameTerritory(event.getBlock().getLocation(), event.getToBlock().getLocation())) event.setCancelled(true);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onInventoryMove(InventoryMoveItemEvent event) {
+        Location source = location(event.getSource());
+        Location destination = location(event.getDestination());
+        if (source != null && destination != null && !sameTerritory(source, destination)) event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
@@ -144,61 +168,116 @@ public final class FactionListener implements Listener {
         if (!(event.getEntity() instanceof Player victim)) return;
         Player attacker = null;
         if (event.getDamager() instanceof Player player) attacker = player;
-        else if (event.getDamager() instanceof org.bukkit.entity.Projectile projectile
-                && projectile.getShooter() instanceof Player player) attacker = player;
-        if (attacker == null) return;
-
-        Faction attackFaction = service.of(attacker.getUniqueId());
-        Faction victimFaction = service.of(victim.getUniqueId());
-        if (attackFaction == null || victimFaction == null) return;
-
-        if (attackFaction == victimFaction && !plugin.getConfig().getBoolean("combat.friendly-fire", false)) {
-            event.setCancelled(true);
-            return;
-        }
-        if (attackFaction != victimFaction
-                && service.relation(attackFaction, victimFaction) == Relation.ALLY
-                && !plugin.getConfig().getBoolean("combat.ally-friendly-fire", false)) {
-            event.setCancelled(true);
-        }
+        else if (event.getDamager() instanceof org.bukkit.entity.Projectile projectile && projectile.getShooter() instanceof Player player) attacker = player;
+        if (attacker != null && !service.canPvp(attacker, victim, victim.getLocation())) event.setCancelled(true);
     }
 
     @EventHandler
-    public void onDeath(PlayerDeathEvent event) {
-        service.death(event.getPlayer());
+    public void onDeath(PlayerDeathEvent event) { service.death(event.getPlayer()); }
+
+    @EventHandler
+    public void onRespawn(PlayerRespawnEvent event) {
+        if (!plugin.getConfig().getBoolean("home.respawn-at-faction-home", false)) return;
+        Faction faction = service.of(event.getPlayer().getUniqueId());
+        if (faction != null && faction.home() != null) event.setRespawnLocation(faction.home());
     }
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         if (event.getTo() == null) return;
         if (event.getFrom().getChunk().equals(event.getTo().getChunk())) return;
-        updateTerritory(event.getPlayer(), event.getTo());
+        Player player = event.getPlayer();
+        if (service.autoClaim(player.getUniqueId())) {
+            FactionService.Result result = service.claim(player, event.getTo());
+            if (!result.success() && !result.message().contains("already owns")) plugin.msg(player, "&cAuto-claim: " + result.message());
+        }
+        service.updateFlight(player);
+        updateTerritory(player, event.getTo());
+    }
+
+    @EventHandler
+    public void onTeleport(PlayerTeleportEvent event) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            service.updateFlight(event.getPlayer());
+            if (event.getTo() != null) updateTerritory(event.getPlayer(), event.getTo());
+        });
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        updateTerritory(event.getPlayer(), event.getPlayer().getLocation());
+        Player player = event.getPlayer();
+        updateTerritory(player, player.getLocation());
+        Faction faction = service.of(player.getUniqueId());
+        if (faction != null && plugin.getConfig().getBoolean("members.login-notifications", true)) service.announce(faction, "&7" + player.getName() + " joined the server.");
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        Faction faction = service.of(event.getPlayer().getUniqueId());
+        if (faction != null && plugin.getConfig().getBoolean("members.login-notifications", true)) service.announce(faction, "&7" + event.getPlayer().getName() + " left the server.");
     }
 
     private void updateTerritory(Player player, Location location) {
+        TerritoryType type = service.territoryType(location);
         Faction owner = service.owner(location);
-        String now = owner == null ? "" : owner.id().toString();
+        String now = switch (type) {
+            case SAFEZONE -> "SAFEZONE";
+            case WARZONE -> "WARZONE";
+            case WILDERNESS -> "WILDERNESS";
+            case FACTION -> owner == null ? "WILDERNESS" : owner.id().toString();
+        };
         String old = territory.put(player.getUniqueId(), now);
-        if (Objects.equals(old, now)) return;
-        String raw = owner == null
-                ? plugin.getConfig().getString("messages.territory-leave", "&7Entering Wilderness")
-                : plugin.getConfig().getString("messages.territory-enter", "&aEntering &f%faction% &aterritory")
-                    .replace("%faction%", owner.name());
-        player.sendActionBar(plugin.component(raw));
+        if (!Objects.equals(old, now)) {
+            String raw = switch (type) {
+                case SAFEZONE -> plugin.getConfig().getString("messages.territory-safezone", "&aEntering SafeZone");
+                case WARZONE -> plugin.getConfig().getString("messages.territory-warzone", "&cEntering WarZone");
+                case WILDERNESS -> plugin.getConfig().getString("messages.territory-wilderness", "&7Entering Wilderness");
+                case FACTION -> plugin.getConfig().getString("messages.territory-faction", "&aEntering &f%faction% &aterritory").replace("%faction%", owner == null ? "Wilderness" : owner.name());
+            };
+            player.sendActionBar(plugin.component(raw));
+        }
+        if (owner != null) {
+            String zoneName = owner.zoneForClaim(service.claimKey(location));
+            String oldZone = zone.put(player.getUniqueId(), zoneName == null ? "" : zoneName);
+            if (!Objects.equals(oldZone, zoneName) && zoneName != null) {
+                FactionZone factionZone = owner.zone(zoneName);
+                if (factionZone != null && !factionZone.greeting().isBlank()) player.sendActionBar(plugin.component(factionZone.greeting()));
+            }
+        } else zone.remove(player.getUniqueId());
+    }
+
+    private FactionPermission interactionPermission(Block block) {
+        if (block.getState() instanceof Container) return FactionPermission.CONTAINER;
+        String type = block.getType().name();
+        if (type.contains("DOOR") || type.contains("TRAPDOOR") || type.contains("FENCE_GATE")) return FactionPermission.DOOR;
+        if (type.contains("BUTTON")) return FactionPermission.BUTTON;
+        if (type.equals("LEVER")) return FactionPermission.LEVER;
+        if (type.contains("PRESSURE_PLATE")) return FactionPermission.PRESSURE_PLATE;
+        return FactionPermission.USE;
+    }
+
+    private boolean sameTerritory(Location a, Location b) {
+        if (service.territoryType(a) != service.territoryType(b)) return false;
+        return service.owner(a) == service.owner(b);
+    }
+
+    private Location location(Inventory inventory) {
+        InventoryHolder holder = inventory.getHolder();
+        if (holder instanceof BlockState state) return state.getLocation();
+        return null;
+    }
+
+    private int firstEmptyVault(Inventory inventory, int allowed) {
+        for (int i = 0; i < allowed; i++) if (inventory.getItem(i) == null || inventory.getItem(i).getType().isAir()) return i;
+        return -1;
     }
 
     private void deny(Cancellable event, Player player) {
         event.setCancelled(true);
-        plugin.msg(player, "&cYou cannot do that in another faction's territory.");
+        plugin.msg(player, "&cYou cannot do that in this territory.");
     }
 
     private void respond(Player player, FactionService.Result result) {
         if (!result.message().isBlank()) plugin.msg(player, (result.success() ? "&a" : "&c") + result.message());
-        if (result.success()) Bukkit.getScheduler().runTask(plugin, () -> gui.open(player));
     }
 }
