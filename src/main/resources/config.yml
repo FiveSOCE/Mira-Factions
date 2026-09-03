@@ -127,6 +127,8 @@ upgrades:
     extra-roll-chance-per-level: 0.10
   crop-growth:
     extra-stage-chance-per-level: 0.10
+  spawner-rate:
+    speed-bonus-per-level: 0.10
 
 messages:
   territory-faction: "&aEntering &f%faction% &aterritory"
