@@ -1,0 +1,24 @@
+name: MiraFactions
+version: ${version}
+main: com.mira.factions.MiraFactionsPlugin
+api-version: '1.21'
+authors: [FiveS]
+description: GUI-first factions, claims, power and diplomacy for the Mira plugin suite.
+
+commands:
+  faction:
+    description: MiraFactions main command.
+    aliases: [f, factions]
+    usage: /f
+  factionadmin:
+    description: MiraFactions administration.
+    aliases: [fadmin]
+    permission: mirafactions.admin
+
+permissions:
+  mirafactions.use:
+    default: true
+  mirafactions.admin:
+    default: op
+  mirafactions.bypass:
+    default: op
