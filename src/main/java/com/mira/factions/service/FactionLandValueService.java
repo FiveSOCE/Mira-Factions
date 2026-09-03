@@ -28,10 +28,13 @@ public final class FactionLandValueService {
         this.plugin = plugin;
     }
 
-    public double value(Faction faction) {
-        if (faction == null) return 0D;
+    public double value(Faction faction) { return breakdown(faction).spawnerValue(); }
+
+    public Breakdown breakdown(Faction faction) {
+        if (faction == null) return new Breakdown(0D, Map.of());
         refreshPrices();
         double total = 0D;
+        Map<EntityType, Integer> counts = new EnumMap<>(EntityType.class);
         for (String claim : faction.claims()) {
             Claim parsed = parse(claim);
             if (parsed == null) continue;
@@ -47,11 +50,17 @@ public final class FactionLandValueService {
                     Integer stored = spawner.getPersistentDataContainer().get(STACK_SIZE, PersistentDataType.INTEGER);
                     if (stored != null) stack = Math.max(1, stored);
                 }
+                counts.merge(type, stack, Integer::sum);
                 double unit = spawnerPrices.getOrDefault(type, essentialsGenericSpawnerValue);
                 if (unit > 0D) total += unit * stack;
             }
         }
-        return total;
+        return new Breakdown(total, Collections.unmodifiableMap(new EnumMap<>(counts)));
+    }
+
+    public double unitPrice(EntityType type) {
+        refreshPrices();
+        return spawnerPrices.getOrDefault(type, essentialsGenericSpawnerValue);
     }
 
     private void refreshPrices() {
@@ -111,6 +120,10 @@ public final class FactionLandValueService {
             plugin.getLogger().fine("Could not parse faction claim key for value: " + key);
             return null;
         }
+    }
+
+    public record Breakdown(double spawnerValue, Map<EntityType, Integer> spawnerCounts) {
+        public int totalSpawners() { return spawnerCounts.values().stream().mapToInt(Integer::intValue).sum(); }
     }
 
     private record Claim(UUID world, int x, int z) {}
