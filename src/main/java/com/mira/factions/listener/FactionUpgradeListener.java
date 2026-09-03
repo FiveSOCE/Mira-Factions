@@ -4,9 +4,11 @@ import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.Faction;
 import com.mira.factions.model.UpgradeType;
 import com.mira.factions.service.FactionService;
+import org.bukkit.block.CreatureSpawner;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -14,9 +16,7 @@ import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockGrowEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageByBlockEvent;
-import org.bukkit.entity.Projectile;
+import org.bukkit.event.entity.SpawnerSpawnEvent;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -75,7 +75,7 @@ public final class FactionUpgradeListener implements Listener {
         if (ThreadLocalRandom.current().nextDouble() >= chance) return;
 
         var original = event.getDrops().stream().map(item -> item.clone()).toList();
-        for (var item : original) event.getDrops().add(item);
+        event.getDrops().addAll(original);
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
@@ -99,10 +99,26 @@ public final class FactionUpgradeListener implements Listener {
         if (level <= 0) return;
         if (!(event.getNewState().getBlockData() instanceof Ageable ageable)) return;
         double chance = Math.min(1.0, level * plugin.getConfig().getDouble("upgrades.crop-growth.extra-stage-chance-per-level", 0.10));
-        if (ThreadLocalRandom.current().nextDouble() >= chance) return;
-        if (ageable.getAge() >= ageable.getMaximumAge()) return;
+        if (ThreadLocalRandom.current().nextDouble() >= chance || ageable.getAge() >= ageable.getMaximumAge()) return;
         ageable.setAge(Math.min(ageable.getMaximumAge(), ageable.getAge() + 1));
         event.getNewState().setBlockData(ageable);
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onSpawnerSpawn(SpawnerSpawnEvent event) {
+        CreatureSpawner spawner = event.getSpawner();
+        Faction faction = service.owner(spawner.getLocation());
+        if (faction == null) return;
+        int level = faction.upgrade(UpgradeType.SPAWNER_RATE);
+        if (level <= 0) return;
+        double bonus = Math.max(0.0, level * plugin.getConfig().getDouble("upgrades.spawner-rate.speed-bonus-per-level", 0.10));
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            if (!spawner.getBlock().getChunk().isLoaded()) return;
+            int current = Math.max(1, spawner.getDelay());
+            int accelerated = Math.max(1, (int) Math.round(current / (1.0 + bonus)));
+            spawner.setDelay(accelerated);
+            spawner.update(true, false);
+        });
     }
 
     private Player attackingPlayer(EntityDamageByEntityEvent event) {
