@@ -77,6 +77,12 @@ members:
 chat:
   public-faction-tag: true
 
+history:
+  value-snapshot-minutes: 10
+  audit-max-entries: 1000
+  bank-max-entries: 1000
+  value-max-entries: 1000
+
 upgrades:
   cost-base: 10000.0
   cost-multiplier: 2.0
