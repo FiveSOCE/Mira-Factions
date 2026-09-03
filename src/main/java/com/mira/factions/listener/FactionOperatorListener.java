@@ -11,6 +11,7 @@ import com.mira.factions.service.FactionService;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -59,6 +60,13 @@ public final class FactionOperatorListener implements Listener {
             if (!event.getPlayer().hasPermission("mirafactions.use")) return;
             Faction faction = args.length >= 3 ? service.byName(args[2]) : service.of(event.getPlayer().getUniqueId());
             showValue(event.getPlayer(), faction);
+            return;
+        }
+
+        if (isFactionAlias(args[0]) && args.length == 2 && args[1].equalsIgnoreCase("top")) {
+            event.setCancelled(true);
+            if (!event.getPlayer().hasPermission("mirafactions.use")) return;
+            showFactionTop(event.getPlayer());
             return;
         }
 
@@ -170,13 +178,53 @@ public final class FactionOperatorListener implements Listener {
         plugin.msg(player, "&7Use &f/f list <page>&7 to change pages. 10 factions per page.");
     }
 
+    private void showFactionTop(Player player) {
+        record Wealth(Faction faction, double land, double bank, double total) {}
+        List<Wealth> ranking = new ArrayList<>();
+        for (Faction faction : service.all()) {
+            double land = landValue.value(faction);
+            double bank = faction.bankBalance();
+            ranking.add(new Wealth(faction, land, bank, land + bank));
+        }
+        ranking.sort(Comparator.comparingDouble(Wealth::total).reversed().thenComparing(w -> w.faction().name(), String.CASE_INSENSITIVE_ORDER));
+        plugin.msg(player, "&5&m--------------------------------");
+        plugin.msg(player, "&dFaction Top &7- &fWealth Ranking");
+        if (ranking.isEmpty()) plugin.msg(player, "&7No factions exist yet.");
+        int place = 1;
+        for (Wealth wealth : ranking.stream().limit(10).toList()) {
+            plugin.msg(player, "&d#" + place++ + " &f" + wealth.faction().name()
+                    + " &7Wealth &a$" + money(wealth.total())
+                    + " &7Land &f$" + money(wealth.land())
+                    + " &7Bank &f$" + money(wealth.bank()));
+        }
+    }
+
     private void showValue(Player player, Faction faction) {
         if (faction == null) {
             plugin.msg(player, "&cFaction not found.");
             return;
         }
-        double value = landValue.value(faction);
-        plugin.msg(player, "&7Spawner Land Value: &a$" + String.format(Locale.US, "%,.2f", value));
+        FactionLandValueService.Breakdown breakdown = landValue.breakdown(faction);
+        double bank = faction.bankBalance();
+        double total = breakdown.spawnerValue() + bank;
+        plugin.msg(player, "&5&m--------------------------------");
+        plugin.msg(player, "&d" + faction.name() + " Value");
+        plugin.msg(player, "&7Total Wealth: &a$" + money(total));
+        plugin.msg(player, "&7Spawner Land Value: &f$" + money(breakdown.spawnerValue()));
+        plugin.msg(player, "&7Faction Bank: &f$" + money(bank));
+        plugin.msg(player, "&7Placed Spawners: &f" + breakdown.totalSpawners());
+        if (breakdown.spawnerCounts().isEmpty()) {
+            plugin.msg(player, "&8No valued spawners found in claimed land.");
+            return;
+        }
+        breakdown.spawnerCounts().entrySet().stream()
+                .sorted(Map.Entry.<EntityType, Integer>comparingByValue().reversed())
+                .forEach(entry -> {
+                    double unit = landValue.unitPrice(entry.getKey());
+                    double value = unit > 0D ? unit * entry.getValue() : 0D;
+                    plugin.msg(player, "&7- &f" + pretty(entry.getKey().name()) + " Spawner &dx" + entry.getValue()
+                            + " &7= &a$" + money(value));
+                });
     }
 
     private void setAdminPower(UUID uuid, double value) {
@@ -265,5 +313,17 @@ public final class FactionOperatorListener implements Listener {
 
     private static String format(double value) {
         return String.format(Locale.US, value == Math.rint(value) ? "%.0f" : "%.1f", value);
+    }
+
+    private static String money(double value) { return String.format(Locale.US, "%,.2f", Math.max(0D, value)); }
+
+    private static String pretty(String raw) {
+        StringBuilder out = new StringBuilder();
+        for (String part : raw.toLowerCase(Locale.ROOT).split("_")) {
+            if (part.isBlank()) continue;
+            if (!out.isEmpty()) out.append(' ');
+            out.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return out.toString();
     }
 }
