@@ -29,3 +29,6 @@ permissions:
   mirafactions.bypass:
     description: Allows bypassing faction territory protection.
     default: op
+  mirafactions.protectedzone.bypass:
+    description: Allows bypassing SafeZone and WarZone item, projectile and SafeZone damage protections.
+    default: op
