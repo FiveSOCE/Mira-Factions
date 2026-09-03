@@ -4,9 +4,9 @@ Command-first faction warfare for **Paper 1.21.11 / Java 21**, built for the Mir
 
 ## Download
 
-Current release: **v0.2.2**
+Current release: **v0.2.3**
 
-[**Download MiraFactions v0.2.2**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.2/MiraFactions-0.2.2.jar)
+[**Download MiraFactions v0.2.3**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.3/MiraFactions-0.2.3.jar)
 
 [View all releases](https://github.com/FiveSOCE/Mira-Factions/releases)
 
@@ -19,7 +19,7 @@ Current release: **v0.2.2**
 - PlaceholderAPI optional
 - MiraShop and MiraSpawners recommended for typed-spawner faction land value
 
-## v0.2.2
+## v0.2.3
 
 ### Faction list
 
@@ -32,7 +32,7 @@ Lists every faction using **10 factions per page**. Entries show online/total me
 
 ### Faction land value
 
-MiraFactions now calculates faction land value from spawners physically located inside claimed chunks.
+MiraFactions calculates faction land value from spawners physically located inside claimed chunks.
 
 ```text
 /f value
@@ -57,7 +57,7 @@ Land value is intentionally spawner-based rather than assigning arbitrary value 
 
 ### Power
 
-Normal player power is now:
+Normal player power is:
 
 ```text
 Start: 25
@@ -80,11 +80,11 @@ Admin-set power may exceed normal player limits, for example:
 /fa power FiveS 100
 ```
 
-The existing explicit operator forms also remain available where applicable.
+Out-of-range operator power is preserved rather than being snapped back to the normal 25 cap by regeneration. Death still subtracts the normal configured power loss, so 100 becomes 98 with the default death loss.
 
 ### Larger faction map
 
-`/f map` now defaults to radius **8**, giving a **17 x 17 chunk** territory view centered on the player.
+`/f map` defaults to radius **8**, giving a **17 x 17 chunk** territory view centered on the player.
 
 Auto-map remains available:
 
@@ -272,5 +272,5 @@ gradle clean build
 Output:
 
 ```text
-build/libs/MiraFactions-0.2.2.jar
+build/libs/MiraFactions-0.2.3.jar
 ```
