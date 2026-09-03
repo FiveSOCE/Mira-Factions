@@ -98,7 +98,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
     }
 
     public Component component(String raw) { return AMPERSAND.deserialize(raw == null ? "" : raw); }
-    public void msg(CommandSender sender, String raw) { sender.sendMessage(component(getConfig().getString("prefix", "&5[MiraFactions]&r ") + raw)); }
+    public void msg(CommandSender sender, String raw) { sender.sendMessage(component(getConfig().getString("prefix", "&5&lMira &8>> &r") + raw)); }
     public FactionService factions() { return factions; }
     public EconomyHook economy() { return economy; }
     public FactionHistoryService history() { return history; }
