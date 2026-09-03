@@ -1,0 +1,28 @@
+prefix: "&5[MiraFactions]&r "
+
+power:
+  starting: 10.0
+  minimum: -10.0
+  maximum: 10.0
+  death-loss: 2.0
+  regen-amount: 1.0
+  regen-minutes: 5
+
+claims:
+  worlds: []
+  protect-build: true
+  protect-containers: true
+  protect-interactions: true
+  protect-explosions: true
+
+combat:
+  friendly-fire: false
+  ally-friendly-fire: false
+
+home:
+  warmup-seconds: 5
+  cooldown-seconds: 30
+
+messages:
+  territory-enter: "&aEntering &f%faction% &aterritory"
+  territory-leave: "&7Entering Wilderness"
