@@ -4,9 +4,9 @@ Command-first faction warfare for **Paper 1.21.11 / Java 21**, built for the Mir
 
 ## Download
 
-Current release: **v0.2.7**
+Current release: **v0.2.8**
 
-[**Download MiraFactions v0.2.7**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.7/MiraFactions-0.2.7.jar)
+[**Download MiraFactions v0.2.8**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.8/MiraFactions-0.2.8.jar)
 
 [View all releases](https://github.com/FiveSOCE/Mira-Factions/releases)
 
@@ -19,6 +19,19 @@ Current release: **v0.2.7**
 - PlaceholderAPI optional
 - MiraFly recommended and required for `/f fly`
 - MiraShop and MiraSpawners recommended for typed-spawner faction value
+
+## v0.2.8 admin claiming and protected-zone hardening
+
+- `/fa claim <Faction> <Amount>` force-claims the nearest requested number of chunks for a faction
+- `/fa autoclaim <Faction>` toggles admin autoclaim for that faction while crossing chunk borders
+- existing `/fa claim <safezone|warzone|wilderness>` remains available
+- admin faction claiming will not overwrite SafeZone or WarZone territory
+- SafeZone and WarZone block build/break for normal players
+- hostile and passive mob spawning is blocked in SafeZone and WarZone
+- SafeZone cancels all player damage, including environmental, projectile and potion damage
+- SafeZone and WarZone block spawn eggs, bows, crossbows, tridents, pearls, eggs, snowballs, XP bottles, splash/lingering potions, wind charges and fireworks for normal players
+- explosions cannot damage blocks in SafeZone or WarZone
+- `mirafactions.protectedzone.bypass` bypasses protected-zone restrictions and defaults to operators
 
 ## v0.2.7 MiraFly flight delegation
 
@@ -102,5 +115,5 @@ gradle clean build
 Output:
 
 ```text
-build/libs/MiraFactions-0.2.7.jar
+build/libs/MiraFactions-0.2.8.jar
 ```
