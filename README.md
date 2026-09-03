@@ -4,9 +4,9 @@ Command-first faction warfare for **Paper 1.21.11 / Java 21**, built for the Mir
 
 ## Download
 
-Current release: **v0.2.1**
+Current release: **v0.2.2**
 
-[**Download MiraFactions v0.2.1**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.1/MiraFactions-0.2.1.jar)
+[**Download MiraFactions v0.2.2**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.2/MiraFactions-0.2.2.jar)
 
 [View all releases](https://github.com/FiveSOCE/Mira-Factions/releases)
 
@@ -17,26 +17,85 @@ Current release: **v0.2.1**
 - Vault
 - A Vault-compatible economy provider
 - PlaceholderAPI optional
+- MiraShop and MiraSpawners recommended for typed-spawner faction land value
 
-## v0.2.1
+## v0.2.2
 
-MiraFactions is command-first. Inventory GUIs are retained only where inventory interaction is useful:
+### Faction list
 
-- `/f upgrades`
-- `/f vault`
+```text
+/f list
+/f list <page>
+```
 
-### Auto-map
+Lists every faction using **10 factions per page**. Entries show online/total members, faction power, claimed chunks and RAIDABLE state.
 
-Players can toggle automatic faction-map output with either:
+### Faction land value
+
+MiraFactions now calculates faction land value from spawners physically located inside claimed chunks.
+
+```text
+/f value
+/f value <faction>
+/f info [faction]
+```
+
+The value system reads:
+
+1. the actual mob type of each placed spawner
+2. the MiraSpawners stack size stored on that block
+3. the matching typed spawner BUY value from MiraShop
+4. Essentials generic spawner worth as a fallback when MiraShop has no typed value
+
+Example:
+
+```text
+64 stacked Zombie Spawners x $150,000 = $9,600,000 land value
+```
+
+Land value is intentionally spawner-based rather than assigning arbitrary value to every normal block in a claim.
+
+### Power
+
+Normal player power is now:
+
+```text
+Start: 25
+Maximum: 25
+Minimum: -10
+Death loss: 2
+```
+
+Faction claim capacity remains based on summed faction power. If claims exceed supported power, the faction becomes RAIDABLE.
+
+Operators can directly set uncapped power with:
+
+```text
+/fa power <player> <amount>
+```
+
+Admin-set power may exceed normal player limits, for example:
+
+```text
+/fa power FiveS 100
+```
+
+The existing explicit operator forms also remain available where applicable.
+
+### Larger faction map
+
+`/f map` now defaults to radius **8**, giving a **17 x 17 chunk** territory view centered on the player.
+
+Auto-map remains available:
 
 ```text
 /f map auto
 /f automap
 ```
 
-When enabled, the relation-colored faction map redraws every time that player enters a new chunk. Auto-map is session based and disables when the player logs out or the server restarts.
+When enabled, the map redraws whenever that player crosses into another chunk.
 
-### Faction lifecycle and membership
+## Faction lifecycle and membership
 
 - Create, join, leave and disband
 - Recruit / Member / Officer / Coleader / Leader ranks
@@ -52,44 +111,34 @@ When enabled, the relation-colored faction map redraws every time that player en
 - Permanent factions
 - Peaceful factions
 
-### Power, claims and raiding
-
-Default player power is 10, death removes 2 and power regenerates over time.
+## Power, claims and raiding
 
 Faction claim capacity is based on faction power. When a faction owns more chunks than its current power supports it becomes **RAIDABLE**.
 
-Enemy factions can then overclaim vulnerable chunks. Overclaiming is blocked while the defending faction is protected by grace, a faction shield, peaceful status or sufficient power.
+Enemy factions can overclaim vulnerable chunks. Overclaiming is blocked while the defending faction is protected by grace, a faction shield, peaceful status or sufficient power.
 
 Claim tools include:
 
-- `/f claim`
-- `/f claim radius <radius>`
-- `/f auto`
-- `/f unclaim`
-- `/f unclaim all`
-- `/f map`
-- `/f map auto`
-- `/f seechunk`
+```text
+/f claim
+/f claim radius <radius>
+/f auto
+/f unclaim
+/f unclaim all
+/f map
+/f map auto
+/f seechunk
+```
 
 Territory protection covers block breaking/placing, buckets, containers, interactions, explosions, pistons, liquid flow and cross-border hopper transfers.
 
-### Special territory
+## Special territory
 
-Admins can create:
+Admins can create SafeZone, WarZone and Wilderness territory.
 
-- SafeZone
-- WarZone
-- Wilderness
+## Granular faction permissions
 
-SafeZone blocks PvP and normal player territory modification. WarZone and Wilderness follow their configured warfare rules.
-
-### Granular faction permissions
-
-Faction leaders can define minimum ranks for individual actions instead of relying only on hardcoded role behavior.
-
-Permissions include building, destroying, containers, doors, buttons, levers, pressure plates, inviting, kicking, banning, promotion, claiming, faction home, warps, economy, TNT, flight, shields, upgrades, vault access, zones, diplomacy, announcements and disbanding.
-
-Relation-based access can also be granted or denied for Ally, Truce, Neutral and Enemy relations.
+Faction leaders can define minimum ranks for individual actions and relation-based access for Ally, Truce, Neutral and Enemy factions.
 
 Examples:
 
@@ -99,7 +148,7 @@ Examples:
 /f perms relation container ally deny
 ```
 
-### Diplomacy and chat
+## Diplomacy and chat
 
 Relations:
 
@@ -107,8 +156,6 @@ Relations:
 - Truce
 - Neutral
 - Enemy
-
-Ally and Truce require mutual agreement. Enemy and Neutral changes are immediate.
 
 Chat channels:
 
@@ -119,77 +166,19 @@ Chat channels:
 /f chat truce
 ```
 
-Public chat can display a faction tag. Operators can monitor private faction channels with `/fa chatspy` without receiving duplicate spy lines for channels they would already normally receive.
+Operators can monitor private channels with `/fa chatspy`.
 
-### Homes and warps
+## Homes, warps and faction economy
 
-- faction home
-- remove faction home
-- configurable warmup/cooldown
-- optional respawn at faction home
-- multiple faction warps
-- warp limits expanded through upgrades
+MiraFactions includes faction homes, multiple faction warps, Vault-backed faction banking, daily dues/rent foundations, TNT banking, faction shields, grace periods, faction flight and zones.
 
-### Faction economy
+## Native faction vault
 
-Vault-backed faction banking:
+`/f vault` opens the persistent shared faction inventory. Capacity expands through the Vault Size upgrade.
 
-```text
-/f money balance
-/f money deposit <amount>
-/f money withdraw <amount>
-/f money pay <faction> <amount>
-```
+## Faction upgrades
 
-The faction bank funds upgrades.
-
-Daily member dues and per-claim land-rent foundations are included and persisted.
-
-### TNT bank
-
-```text
-/f tnt balance
-/f tnt deposit <amount>
-/f tnt withdraw <amount>
-```
-
-Capacity can be increased through faction upgrades.
-
-### Shields and grace
-
-Factions can purchase Shield upgrades and activate timed raid protection with `/f shield`.
-
-Admins can enable or stop server-wide grace periods with `/fa grace` and can clear/reset faction shields from `/fa shield`.
-
-### Faction flight
-
-Faction Flight is an upgrade. Authorized faction members can use `/f fly` in their own territory and allied territory. It automatically disables when the player leaves permitted land.
-
-### Zones
-
-Faction claims can be divided into named permission zones:
-
-```text
-/f zone create <name>
-/f zone assign <name>
-/f zone greeting <name> <message>
-/f zone perm <name> <permission> <rank>
-/f zone delete <name>
-```
-
-Zones can override the faction-wide minimum rank for protected actions.
-
-### Native faction vault
-
-`/f vault` opens a persistent shared faction inventory.
-
-Vault capacity starts small and expands through the Vault upgrade. Locked slots cannot be used until upgraded.
-
-### Faction upgrades
-
-`/f upgrades` opens the upgrade GUI. Purchases use faction-bank funds.
-
-Current upgrade families:
+`/f upgrades` opens the upgrade GUI. Current upgrade families include:
 
 - Power
 - Member Limit
@@ -209,31 +198,29 @@ Current upgrade families:
 - Spawner Rate
 - Zone Limit
 
-Gameplay upgrades are functional. Spawner Rate accelerates the actual spawner block delay instead of creating duplicate unmanaged mobs, so it remains compatible with the normal spawner event pipeline.
+## Utility commands
 
-Operators can directly set or add upgrade levels with `/fa upgrade` for administration/testing.
+```text
+/f info [faction]
+/f list [page]
+/f value [faction]
+/f power [player]
+/f top
+/f near
+/f coords
+/f announce <message>
+/f stuck
+```
 
-### Utility commands
+## PlaceholderAPI and public API
 
-- `/f info [faction]`
-- `/f power [player]`
-- `/f top`
-- `/f near`
-- `/f coords`
-- `/f announce <message>`
-- `/f stuck`
+When PlaceholderAPI is present, MiraFactions registers `%mirafactions_*%` placeholders for core faction/player/territory information.
 
-### PlaceholderAPI
+MiraFactions also registers `MiraFactionsApi` through Bukkit's ServicesManager for other Mira plugins.
 
-When PlaceholderAPI is present, MiraFactions registers `%mirafactions_*%` placeholders including faction name/id, description, link, rank, title, player/faction power, claims, maximum claims, raidable state, bank balance, TNT, member counts and current territory/relation.
+## `/fa` operator suite
 
-### Public API
-
-MiraFactions registers a `MiraFactionsApi` with Bukkit's ServicesManager for other Mira plugins. It exposes player factions, territory ownership, relations, player/faction power, raidability, SafeZone/WarZone checks and build-permission queries.
-
-### `/fa` operator suite
-
-`/fa help [1-3]` displays the full operator command set. Current controls include:
+`/fa help [1-3]` displays the operator command set. Major controls include:
 
 ```text
 /fa bypass
@@ -247,6 +234,7 @@ MiraFactions registers a `MiraFactionsApi` with Bukkit's ServicesManager for oth
 /fa forcekick <player>
 /fa forcerole <player> <rank>
 /fa forcehome <player> <faction>
+/fa power <player> <amount>
 /fa power <set|add> <player> <amount>
 /fa powerboost <set|add> <faction> <amount>
 /fa permanentpower <set|clear> <faction> [amount]
@@ -260,10 +248,6 @@ MiraFactions registers a `MiraFactionsApi` with Bukkit's ServicesManager for oth
 /fa rentexempt <faction>
 /fa shield <clear|reset> <faction>
 ```
-
-The operator suite includes context-aware tab completion for online players, factions, ranks, upgrade types and sub-actions.
-
-`forcejoin`, `forcekick` and `forcehome` currently require the target player to be online so runtime membership/teleport state stays consistent without editing player data behind Bukkit's back.
 
 ## Permissions
 
@@ -279,10 +263,6 @@ Runtime faction state is stored at:
 plugins/MiraFactions/factions.yml
 ```
 
-MiraFactions persists factions, ranks, titles, power, claims, special territory, relations, requests, permissions, relation access, invites, bans, homes, warps, faction bank, TNT bank, dues/debt, shields, upgrades, vault contents, zones, peaceful/permanent state and grace state.
-
-Existing v0.1.0 faction data is migrated where possible, including legacy homes, invites and alliance requests.
-
 ## Building
 
 ```bash
@@ -292,5 +272,5 @@ gradle clean build
 Output:
 
 ```text
-build/libs/MiraFactions-0.2.1.jar
+build/libs/MiraFactions-0.2.2.jar
 ```
