@@ -5,6 +5,7 @@ import com.mira.factions.command.*;
 import com.mira.factions.gui.FactionGuiService;
 import com.mira.factions.hook.MiraFactionsPlaceholderExpansion;
 import com.mira.factions.listener.FactionAdminAuditListener;
+import com.mira.factions.listener.FactionHistoryAliasListener;
 import com.mira.factions.listener.FactionHistoryListener;
 import com.mira.factions.listener.FactionHistoryTabListener;
 import com.mira.factions.listener.FactionListener;
@@ -39,6 +40,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         FactionGuiService gui = new FactionGuiService(this, factions);
 
         FactionHistoryListener historyListener = new FactionHistoryListener(this, factions, history, landValue);
+        getServer().getPluginManager().registerEvents(new FactionHistoryAliasListener(), this);
         getServer().getPluginManager().registerEvents(historyListener, this);
         getServer().getPluginManager().registerEvents(new FactionHistoryTabListener(), this);
         getServer().getPluginManager().registerEvents(new FactionAdminAuditListener(this, factions, history), this);
