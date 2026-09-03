@@ -3,22 +3,29 @@ version: ${version}
 main: com.mira.factions.MiraFactionsPlugin
 api-version: '1.21'
 authors: [FiveS]
-description: GUI-first factions, claims, power and diplomacy for the Mira plugin suite.
+description: Command-first power, claims, raiding, diplomacy, upgrades and faction warfare for the Mira plugin suite.
+depend: [Vault]
+softdepend: [PlaceholderAPI, LuckPerms, Essentials, MiraFly, MiraTab, MiraTags]
 
 commands:
   faction:
     description: MiraFactions main command.
     aliases: [f, factions]
-    usage: /f
+    usage: /f help
+    permission: mirafactions.use
   factionadmin:
     description: MiraFactions administration.
-    aliases: [fadmin]
+    aliases: [fadmin, fa]
+    usage: /fa help
     permission: mirafactions.admin
 
 permissions:
   mirafactions.use:
+    description: Allows normal MiraFactions use.
     default: true
   mirafactions.admin:
+    description: Allows MiraFactions administration.
     default: op
   mirafactions.bypass:
+    description: Allows bypassing faction territory protection.
     default: op
