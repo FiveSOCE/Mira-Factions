@@ -1,0 +1,40 @@
+name: Release v0.2.6
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-v0.2.6.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tested source
+        uses: actions/checkout@v4
+        with:
+          ref: 53dba08e28263853563517f402030b0042ed0e2a
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
+      - name: Build
+        run: gradle clean build --stacktrace
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v0.2.6 \
+            build/libs/MiraFactions-0.2.6.jar \
+            --target 53dba08e28263853563517f402030b0042ed0e2a \
+            --title "MiraFactions v0.2.6" \
+            --notes "Seasonal faction progression update. Adds faction seasonal statistics, peak wealth tracking, highest-value-ever placeholders, best FTop rank tracking, raid season stats and the FTop podium GUI while retaining the v0.2.5 audit, bank, value-history and raid logging systems."
