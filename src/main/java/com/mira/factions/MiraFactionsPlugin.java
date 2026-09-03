@@ -7,6 +7,7 @@ import com.mira.factions.hook.MiraFactionsPlaceholderExpansion;
 import com.mira.factions.listener.FactionHistoryListener;
 import com.mira.factions.listener.FactionListener;
 import com.mira.factions.listener.FactionOperatorListener;
+import com.mira.factions.listener.FactionUpgradeAuditListener;
 import com.mira.factions.listener.FactionUpgradeListener;
 import com.mira.factions.service.*;
 import net.kyori.adventure.text.Component;
@@ -38,6 +39,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         FactionHistoryListener historyListener = new FactionHistoryListener(this, factions, history, landValue);
         getServer().getPluginManager().registerEvents(historyListener, this);
         getServer().getPluginManager().registerEvents(new FactionListener(this, factions, gui), this);
+        getServer().getPluginManager().registerEvents(new FactionUpgradeAuditListener(this, factions, history), this);
         getServer().getPluginManager().registerEvents(new FactionUpgradeListener(this, factions), this);
         getServer().getPluginManager().registerEvents(new FactionOperatorListener(this, factions), this);
 
