@@ -3,6 +3,7 @@ package com.mira.factions.service;
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.Faction;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
@@ -40,27 +41,39 @@ public final class FactionLandValueService {
             if (parsed == null) continue;
             World world = Bukkit.getWorld(parsed.world());
             if (world == null) continue;
-            var chunk = world.getChunkAt(parsed.x(), parsed.z());
-            for (BlockState state : chunk.getTileEntities()) {
-                if (!(state instanceof CreatureSpawner spawner)) continue;
-                EntityType type = spawner.getSpawnedType();
-                if (type == null) continue;
-                int stack = 1;
-                if (STACK_SIZE != null) {
-                    Integer stored = spawner.getPersistentDataContainer().get(STACK_SIZE, PersistentDataType.INTEGER);
-                    if (stored != null) stack = Math.max(1, stored);
-                }
-                counts.merge(type, stack, Integer::sum);
-                double unit = spawnerPrices.getOrDefault(type, essentialsGenericSpawnerValue);
-                if (unit > 0D) total += unit * stack;
-            }
+            ChunkBreakdown chunk = breakdown(world.getChunkAt(parsed.x(), parsed.z()));
+            total += chunk.spawnerValue();
+            for (Map.Entry<EntityType, Integer> entry : chunk.spawnerCounts().entrySet()) counts.merge(entry.getKey(), entry.getValue(), Integer::sum);
         }
         return new Breakdown(total, Collections.unmodifiableMap(new EnumMap<>(counts)));
+    }
+
+    public ChunkBreakdown breakdown(Chunk chunk) {
+        if (chunk == null) return new ChunkBreakdown(0D, Map.of());
+        refreshPrices();
+        double total = 0D;
+        Map<EntityType, Integer> counts = new EnumMap<>(EntityType.class);
+        for (BlockState state : chunk.getTileEntities()) {
+            if (!(state instanceof CreatureSpawner spawner)) continue;
+            EntityType type = spawner.getSpawnedType();
+            if (type == null) continue;
+            int stack = stackSize(spawner);
+            counts.merge(type, stack, Integer::sum);
+            double unit = spawnerPrices.getOrDefault(type, essentialsGenericSpawnerValue);
+            if (unit > 0D) total += unit * stack;
+        }
+        return new ChunkBreakdown(total, Collections.unmodifiableMap(new EnumMap<>(counts)));
     }
 
     public double unitPrice(EntityType type) {
         refreshPrices();
         return spawnerPrices.getOrDefault(type, essentialsGenericSpawnerValue);
+    }
+
+    private int stackSize(CreatureSpawner spawner) {
+        if (STACK_SIZE == null) return 1;
+        Integer stored = spawner.getPersistentDataContainer().get(STACK_SIZE, PersistentDataType.INTEGER);
+        return stored == null ? 1 : Math.max(1, stored);
     }
 
     private void refreshPrices() {
@@ -123,6 +136,10 @@ public final class FactionLandValueService {
     }
 
     public record Breakdown(double spawnerValue, Map<EntityType, Integer> spawnerCounts) {
+        public int totalSpawners() { return spawnerCounts.values().stream().mapToInt(Integer::intValue).sum(); }
+    }
+
+    public record ChunkBreakdown(double spawnerValue, Map<EntityType, Integer> spawnerCounts) {
         public int totalSpawners() { return spawnerCounts.values().stream().mapToInt(Integer::intValue).sum(); }
     }
 
