@@ -5,7 +5,7 @@ api-version: '1.21'
 authors: [FiveS]
 description: Command-first power, claims, raiding, diplomacy, upgrades and faction warfare for the Mira plugin suite.
 depend: [Vault]
-softdepend: [PlaceholderAPI, LuckPerms, Essentials, MiraFly, MiraTab, MiraTags]
+softdepend: [PlaceholderAPI, LuckPerms, Essentials, MiraFly, MiraTab, MiraTags, MiraShop, MiraSpawners]
 
 commands:
   faction:
