@@ -3,6 +3,7 @@ package com.mira.factions.hook;
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.Faction;
 import com.mira.factions.service.FactionLandValueService;
+import com.mira.factions.service.FactionSeasonService;
 import com.mira.factions.service.FactionService;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
@@ -10,10 +11,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public final class MiraFactionsPlaceholderExpansion extends PlaceholderExpansion {
     private final MiraFactionsPlugin plugin;
@@ -38,9 +36,14 @@ public final class MiraFactionsPlaceholderExpansion extends PlaceholderExpansion
         String key = params.toLowerCase(Locale.ROOT);
         String top = topPlaceholder(key);
         if (top != null) return top;
+        FactionSeasonService seasons = plugin.seasons();
+        if (key.equals("highest_value_ever") || key.equals("record_value")) return String.format(Locale.US, "%.2f", seasons.highestValueEver());
+        if (key.equals("highest_value_faction") || key.equals("record_faction")) return seasons.highestValueFaction();
+        if (key.equals("season")) return seasons.currentSeason();
         if (offline == null) return "";
 
         Faction faction = service.of(offline.getUniqueId());
+        FactionSeasonService.Stats season = seasons.stats(faction);
         return switch (key) {
             case "faction", "faction_name" -> faction == null ? "" : faction.name();
             case "faction_id" -> faction == null ? "" : faction.id().toString();
@@ -56,9 +59,15 @@ public final class MiraFactionsPlaceholderExpansion extends PlaceholderExpansion
             case "bank" -> faction == null ? "0.00" : String.format(Locale.US, "%.2f", faction.bankBalance());
             case "tnt" -> faction == null ? "0" : Integer.toString(faction.tntBalance());
             case "members" -> faction == null ? "0" : Integer.toString(faction.members().size());
-            case "online" -> faction == null ? "0" : Long.toString(faction.members().keySet().stream().map(plugin.getServer()::getPlayer).filter(java.util.Objects::nonNull).count());
+            case "online" -> faction == null ? "0" : Long.toString(faction.members().keySet().stream().map(plugin.getServer()::getPlayer).filter(Objects::nonNull).count());
             case "value", "wealth" -> faction == null ? "0.00" : String.format(Locale.US, "%.2f", landValue.value(faction) + faction.bankBalance());
             case "land_value", "spawner_value" -> faction == null ? "0.00" : String.format(Locale.US, "%.2f", landValue.value(faction));
+            case "season_peak", "peak_wealth" -> String.format(Locale.US, "%.2f", season.peakWealth());
+            case "season_best_rank" -> Integer.toString(season.bestFtopRank());
+            case "season_raids_won" -> Integer.toString(season.raidsWon());
+            case "season_raids_lost" -> Integer.toString(season.raidsLost());
+            case "season_raid_value_gained" -> String.format(Locale.US, "%.2f", season.raidValueGained());
+            case "season_raid_value_lost" -> String.format(Locale.US, "%.2f", season.raidValueLost());
             case "territory" -> {
                 if (!(offline instanceof Player player)) yield "";
                 Faction owner = service.owner(player.getLocation());
@@ -91,6 +100,7 @@ public final class MiraFactionsPlaceholderExpansion extends PlaceholderExpansion
             case "bank" -> String.format(Locale.US, "%.2f", entry.faction().bankBalance());
             case "power" -> String.format(Locale.US, "%.1f", service.factionPower(entry.faction()));
             case "members" -> Integer.toString(entry.faction().members().size());
+            case "peak" -> String.format(Locale.US, "%.2f", plugin.seasons().stats(entry.faction()).peakWealth());
             default -> null;
         };
     }
