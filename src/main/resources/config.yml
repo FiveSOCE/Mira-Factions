@@ -83,6 +83,10 @@ history:
   bank-max-entries: 1000
   value-max-entries: 1000
 
+seasons:
+  current: "season-1"
+  snapshot-minutes: 10
+
 upgrades:
   cost-base: 10000.0
   cost-multiplier: 2.0
