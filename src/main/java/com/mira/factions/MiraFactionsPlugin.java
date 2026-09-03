@@ -4,6 +4,7 @@ import com.mira.factions.api.*;
 import com.mira.factions.command.*;
 import com.mira.factions.gui.FactionGuiService;
 import com.mira.factions.hook.MiraFactionsPlaceholderExpansion;
+import com.mira.factions.listener.FactionHistoryListener;
 import com.mira.factions.listener.FactionListener;
 import com.mira.factions.listener.FactionOperatorListener;
 import com.mira.factions.listener.FactionUpgradeListener;
@@ -21,14 +22,21 @@ public final class MiraFactionsPlugin extends JavaPlugin {
     private static final LegacyComponentSerializer AMPERSAND = LegacyComponentSerializer.legacyAmpersand();
     private FactionService factions;
     private EconomyHook economy;
+    private FactionHistoryService history;
+    private FactionLandValueService landValue;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         economy = new EconomyHook(this);
         factions = new FactionService(this, economy);
+        history = new FactionHistoryService(this);
+        landValue = new FactionLandValueService(this);
+        history.initializeBanks(factions.all());
         FactionGuiService gui = new FactionGuiService(this, factions);
 
+        FactionHistoryListener historyListener = new FactionHistoryListener(this, factions, history, landValue);
+        getServer().getPluginManager().registerEvents(historyListener, this);
         getServer().getPluginManager().registerEvents(new FactionListener(this, factions, gui), this);
         getServer().getPluginManager().registerEvents(new FactionUpgradeListener(this, factions), this);
         getServer().getPluginManager().registerEvents(new FactionOperatorListener(this, factions), this);
@@ -50,7 +58,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
 
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             try {
-                new MiraFactionsPlaceholderExpansion(this, factions).register();
+                new MiraFactionsPlaceholderExpansion(this, factions, landValue).register();
                 getLogger().info("PlaceholderAPI expansion registered.");
             } catch (Throwable throwable) {
                 getLogger().warning("Could not register PlaceholderAPI expansion: " + throwable.getMessage());
@@ -61,6 +69,9 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, factions::regeneratePower, regenTicks, regenTicks);
         Bukkit.getScheduler().runTaskTimer(this, factions::cleanupExpiredInvites, 1200L, 1200L);
         Bukkit.getScheduler().runTaskTimer(this, factions::processDailyEconomy, 20L * 60L, 20L * 60L * 60L);
+        Bukkit.getScheduler().runTaskTimer(this, () -> history.pollBanks(factions.all()), 20L, 20L);
+        long valueHistoryTicks = Math.max(1L, getConfig().getLong("history.value-snapshot-minutes", 10L)) * 60L * 20L;
+        Bukkit.getScheduler().runTaskTimer(this, historyListener::snapshotValues, 40L, valueHistoryTicks);
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) factions.renderSeeChunk(player);
         }, 10L, 10L);
@@ -84,4 +95,6 @@ public final class MiraFactionsPlugin extends JavaPlugin {
 
     public FactionService factions() { return factions; }
     public EconomyHook economy() { return economy; }
+    public FactionHistoryService history() { return history; }
+    public FactionLandValueService landValue() { return landValue; }
 }
