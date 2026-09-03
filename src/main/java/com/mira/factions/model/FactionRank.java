@@ -1,7 +1,11 @@
 package com.mira.factions.model;
 
 public enum FactionRank {
-    MEMBER(1), OFFICER(2), COLEADER(3), LEADER(4);
+    RECRUIT(0),
+    MEMBER(1),
+    OFFICER(2),
+    COLEADER(3),
+    LEADER(4);
 
     private final int weight;
 
@@ -9,11 +13,24 @@ public enum FactionRank {
         this.weight = weight;
     }
 
-    public int weight() {
-        return weight;
+    public int weight() { return weight; }
+    public boolean atLeast(FactionRank other) { return weight >= other.weight; }
+
+    public FactionRank promote() {
+        return switch (this) {
+            case RECRUIT -> MEMBER;
+            case MEMBER -> OFFICER;
+            case OFFICER -> COLEADER;
+            default -> this;
+        };
     }
 
-    public boolean atLeast(FactionRank other) {
-        return weight >= other.weight;
+    public FactionRank demote() {
+        return switch (this) {
+            case COLEADER -> OFFICER;
+            case OFFICER -> MEMBER;
+            case MEMBER -> RECRUIT;
+            default -> this;
+        };
     }
 }
