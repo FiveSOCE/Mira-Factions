@@ -115,6 +115,18 @@ upgrades:
     reduction-per-level: 0.10
   power-regen:
     bonus-per-level: 0.20
+  damage:
+    bonus-per-level: 0.05
+  defense:
+    reduction-per-level: 0.05
+  mob-drops:
+    extra-roll-chance-per-level: 0.10
+  mob-xp:
+    bonus-per-level: 0.10
+  crop-yield:
+    extra-roll-chance-per-level: 0.10
+  crop-growth:
+    extra-stage-chance-per-level: 0.10
 
 messages:
   territory-faction: "&aEntering &f%faction% &aterritory"
