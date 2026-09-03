@@ -5,6 +5,7 @@ import com.mira.factions.command.*;
 import com.mira.factions.gui.FactionGuiService;
 import com.mira.factions.hook.MiraFactionsPlaceholderExpansion;
 import com.mira.factions.listener.FactionListener;
+import com.mira.factions.listener.FactionOperatorListener;
 import com.mira.factions.listener.FactionUpgradeListener;
 import com.mira.factions.service.*;
 import net.kyori.adventure.text.Component;
@@ -30,6 +31,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new FactionListener(this, factions, gui), this);
         getServer().getPluginManager().registerEvents(new FactionUpgradeListener(this, factions), this);
+        getServer().getPluginManager().registerEvents(new FactionOperatorListener(this, factions), this);
 
         FactionCommand factionExecutor = new FactionCommand(this, factions, gui);
         PluginCommand factionCommand = getCommand("faction");
