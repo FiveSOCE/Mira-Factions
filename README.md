@@ -4,9 +4,9 @@ Command-first faction warfare for **Paper 1.21.11 / Java 21**, built for the Mir
 
 ## Download
 
-Current release: **v0.2.6**
+Current release: **v0.2.7**
 
-[**Download MiraFactions v0.2.6**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.6/MiraFactions-0.2.6.jar)
+[**Download MiraFactions v0.2.7**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.7/MiraFactions-0.2.7.jar)
 
 [View all releases](https://github.com/FiveSOCE/Mira-Factions/releases)
 
@@ -17,7 +17,21 @@ Current release: **v0.2.6**
 - Vault
 - Vault-compatible economy provider
 - PlaceholderAPI optional
+- MiraFly recommended and required for `/f fly`
 - MiraShop and MiraSpawners recommended for typed-spawner faction value
+
+## v0.2.7 MiraFly flight delegation
+
+MiraFactions now owns only faction-flight entitlement and territory relationship checks. MiraFly owns the actual runtime Bukkit flight state.
+
+- `/f fly` delegates to MiraFly
+- faction FLIGHT upgrade remains enforced by MiraFactions
+- faction FLY rank permission remains enforced by MiraFactions
+- public API exposes faction-flight entitlement
+- public API exposes territory relationship values for region-aware MiraFly policies
+- MiraFactions no longer needs to compete with MiraFly over live flight state in the normal `/f fly` flow
+
+MiraFly v0.1.1+ is the matching runtime controller.
 
 ## v0.2.6 seasonal faction progression
 
@@ -67,7 +81,7 @@ Replace `1` with ranks `1` through `10` where applicable. Static FTop placeholde
 
 ## Core systems
 
-MiraFactions includes faction lifecycle/ranks, power, claims, overclaiming/raiding, granular faction permissions, Ally/Truce/Neutral/Enemy relations, faction chat channels, SafeZone/WarZone territory, faction bank, dues/rent foundations, homes, warps, TNT bank, shields, grace, faction flight foundations, zones, upgrades, vaults, `/f top`, `/f list`, `/f value`, PlaceholderAPI and a public Bukkit ServicesManager API.
+MiraFactions includes faction lifecycle/ranks, power, claims, overclaiming/raiding, granular faction permissions, Ally/Truce/Neutral/Enemy relations, faction chat channels, SafeZone/WarZone territory, faction bank, dues/rent foundations, homes, warps, TNT bank, shields, grace, faction-flight entitlement, zones, upgrades, vaults, `/f top`, `/f list`, `/f value`, PlaceholderAPI and a public Bukkit ServicesManager API.
 
 Normal power defaults to 25 max, -10 minimum, 2 loss on death and 1 regeneration every 5 minutes. Operators can set uncapped power with `/fa power <player> <amount>`.
 
@@ -88,5 +102,5 @@ gradle clean build
 Output:
 
 ```text
-build/libs/MiraFactions-0.2.6.jar
+build/libs/MiraFactions-0.2.7.jar
 ```
