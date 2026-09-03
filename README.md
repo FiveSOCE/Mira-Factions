@@ -4,9 +4,9 @@ Command-first faction warfare for **Paper 1.21.11 / Java 21**, built for the Mir
 
 ## Download
 
-Current release: **v0.2.4**
+Current release: **v0.2.5**
 
-[**Download MiraFactions v0.2.4**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.4/MiraFactions-0.2.4.jar)
+[**Download MiraFactions v0.2.5**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.5/MiraFactions-0.2.5.jar)
 
 [View all releases](https://github.com/FiveSOCE/Mira-Factions/releases)
 
@@ -19,6 +19,76 @@ Current release: **v0.2.4**
 - PlaceholderAPI optional
 - MiraShop and MiraSpawners recommended for typed-spawner faction land value
 
+## v0.2.5 faction intelligence
+
+### Faction audit log
+
+```text
+/f log [page]
+/f audit [page]
+```
+
+MiraFactions now stores a persistent faction audit trail covering faction membership changes, claims and unclaims, role changes, warps, faction settings, TNT changes, shields, upgrades, operator edits and raid value transfers.
+
+History is stored separately from core faction state in:
+
+```text
+plugins/MiraFactions/faction-history.yml
+```
+
+### Faction bank history
+
+```text
+/f money history [page]
+/f bankhistory [page]
+```
+
+Bank history records deposits, withdrawals, transfers, upgrade spending, operator adjustments and system-driven balance changes with timestamp, actor, delta and resulting balance.
+
+### Faction value history
+
+```text
+/f value history [page]
+/f valuehistory [page]
+/f history value [page]
+```
+
+Faction wealth snapshots record:
+
+```text
+Total Wealth = Spawner Land Value + Faction Bank
+```
+
+The default snapshot interval is 10 minutes and is configurable under `history.value-snapshot-minutes`.
+
+### Raid value logging
+
+When a raidable enemy chunk is successfully overclaimed, MiraFactions captures the spawner value inside that exact chunk before transfer and records matching `RAID_LOSS` and `RAID_GAIN` audit entries for the defending and attacking factions.
+
+### FTop PlaceholderAPI
+
+Ranks 1 through 10 are exposed through PlaceholderAPI:
+
+```text
+%mirafactions_top_1_name%
+%mirafactions_top_1_value%
+%mirafactions_top_1_land%
+%mirafactions_top_1_bank%
+%mirafactions_top_1_power%
+%mirafactions_top_1_members%
+```
+
+Replace `1` with any rank from `1` through `10`.
+
+Current-faction value placeholders also include:
+
+```text
+%mirafactions_value%
+%mirafactions_land_value%
+```
+
+The static FTop placeholders work without a player context so they can be used by holograms, scoreboards and MiraNPC dynamic names.
+
 ## v0.2.4 faction wealth
 
 ### Faction value breakdown
@@ -28,7 +98,7 @@ Current release: **v0.2.4**
 /f value <faction>
 ```
 
-Faction value is now presented as a real wealth breakdown:
+Faction value is presented as a wealth breakdown:
 
 ```text
 Total Wealth:        $12,450,000
@@ -37,16 +107,11 @@ Faction Bank:           $550,000
 Placed Spawners:               42
 ```
 
-The command then lists the exact typed spawners found in claimed land, including MiraSpawners stack sizes:
-
-```text
-Zombie Spawner x64 = $11,200,000
-Blaze Spawner x1   =    $650,000
-```
+The command lists exact typed spawners found in claimed land, including MiraSpawners stack sizes.
 
 Spawner value reads the typed BUY price from MiraShop and falls back to Essentials generic spawner worth when a typed price is unavailable.
 
-This is a live scan of the faction's currently claimed chunks. There is no spawner-age or value-maturation mechanic.
+There is no spawner-age or value-maturation mechanic.
 
 ### Wealth-based FTop
 
@@ -54,15 +119,13 @@ This is a live scan of the faction's currently claimed chunks. There is no spawn
 /f top
 ```
 
-Faction Top is now ranked by:
+Faction Top is ranked by:
 
 ```text
 Spawner Land Value + Faction Bank = Total Wealth
 ```
 
 The top 10 output shows each faction's total wealth, land/spawner value and faction bank value.
-
-This turns placed economic assets into the main competitive faction-value metric instead of ranking factions by raw power alone.
 
 ## v0.2.3 faction utilities
 
@@ -90,12 +153,6 @@ Operators can directly set uncapped current power with:
 
 ```text
 /fa power <player> <amount>
-```
-
-For example:
-
-```text
-/fa power FiveS 100
 ```
 
 Operator-set power can exceed normal limits and remains stable through normal regeneration. Death still subtracts the configured power loss.
@@ -156,14 +213,6 @@ Admins can create SafeZone, WarZone and Wilderness territory.
 
 Faction leaders can define minimum ranks for individual actions and relation-based access for Ally, Truce, Neutral and Enemy factions.
 
-Examples:
-
-```text
-/f perms container officer
-/f perms relation door ally allow
-/f perms relation container ally deny
-```
-
 ## Diplomacy and chat
 
 Relations:
@@ -194,25 +243,7 @@ MiraFactions includes faction homes, multiple faction warps, Vault-backed factio
 
 ## Faction upgrades
 
-`/f upgrades` opens the upgrade GUI. Current upgrade families include:
-
-- Power
-- Member Limit
-- Warp Limit
-- Vault Size
-- TNT Capacity
-- Shield
-- Faction Flight
-- Territory Damage
-- Territory Defense
-- Power Regeneration
-- Power Loss Reduction
-- Mob Drops
-- Mob XP
-- Crop Yield
-- Crop Growth
-- Spawner Rate
-- Zone Limit
+`/f upgrades` opens the upgrade GUI. Current upgrade families include Power, Member Limit, Warp Limit, Vault Size, TNT Capacity, Shield, Faction Flight, Territory Damage, Territory Defense, Power Regeneration, Power Loss Reduction, Mob Drops, Mob XP, Crop Yield, Crop Growth, Spawner Rate and Zone Limit.
 
 ## Utility commands
 
@@ -220,6 +251,9 @@ MiraFactions includes faction homes, multiple faction warps, Vault-backed factio
 /f info [faction]
 /f list [page]
 /f value [faction]
+/f value history [page]
+/f money history [page]
+/f log [page]
 /f power [player]
 /f top
 /f near
@@ -230,7 +264,7 @@ MiraFactions includes faction homes, multiple faction warps, Vault-backed factio
 
 ## PlaceholderAPI and public API
 
-When PlaceholderAPI is present, MiraFactions registers `%mirafactions_*%` placeholders for core faction/player/territory information.
+When PlaceholderAPI is present, MiraFactions registers `%mirafactions_*%` placeholders for faction/player/territory information and the FTop ranks.
 
 MiraFactions also registers `MiraFactionsApi` through Bukkit's ServicesManager for other Mira plugins.
 
@@ -273,10 +307,16 @@ MiraFactions also registers `MiraFactionsApi` through Bukkit's ServicesManager f
 
 ## Persistence
 
-Runtime faction state is stored at:
+Runtime faction state:
 
 ```text
 plugins/MiraFactions/factions.yml
+```
+
+Audit, bank and value history:
+
+```text
+plugins/MiraFactions/faction-history.yml
 ```
 
 ## Building
@@ -288,5 +328,5 @@ gradle clean build
 Output:
 
 ```text
-build/libs/MiraFactions-0.2.4.jar
+build/libs/MiraFactions-0.2.5.jar
 ```
