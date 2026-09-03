@@ -2,6 +2,7 @@ package com.mira.factions.service;
 
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.*;
+import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
