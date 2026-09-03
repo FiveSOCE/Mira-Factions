@@ -5,6 +5,7 @@ import com.mira.factions.command.FactionAdminCommand;
 import com.mira.factions.model.ChatMode;
 import com.mira.factions.model.Faction;
 import com.mira.factions.model.Relation;
+import com.mira.factions.model.UpgradeType;
 import com.mira.factions.service.FactionLandValueService;
 import com.mira.factions.service.FactionService;
 import io.papermc.paper.event.player.AsyncChatEvent;
@@ -14,6 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -27,11 +29,14 @@ public final class FactionOperatorListener implements Listener {
     private final FactionService service;
     private final FactionLandValueService landValue;
     private final Set<UUID> autoMap = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, Double> operatorPower = new ConcurrentHashMap<>();
 
     public FactionOperatorListener(MiraFactionsPlugin plugin, FactionService service) {
         this.plugin = plugin;
         this.service = service;
         this.landValue = new FactionLandValueService(plugin);
+        recoverOutOfRangeOperatorPower();
+        Bukkit.getScheduler().runTaskTimer(plugin, this::enforceOperatorPower, 20L, 20L);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -62,6 +67,7 @@ public final class FactionOperatorListener implements Listener {
             double amount;
             try { amount = Double.parseDouble(args[3]); }
             catch (NumberFormatException ex) { return; }
+            if (!Double.isFinite(amount)) return;
             OfflinePlayer target = findPlayer(args[2]);
             if (target == null) return;
             event.setCancelled(true);
@@ -102,6 +108,23 @@ public final class FactionOperatorListener implements Listener {
                 && event.getFrom().getChunk().getX() == event.getTo().getChunk().getX()
                 && event.getFrom().getChunk().getZ() == event.getTo().getChunk().getZ()) return;
         showMap(event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onDeath(PlayerDeathEvent event) {
+        UUID uuid = event.getPlayer().getUniqueId();
+        Double current = operatorPower.get(uuid);
+        if (current == null) return;
+        Faction faction = service.of(uuid);
+        double loss = plugin.getConfig().getDouble("power.death-loss", 2.0);
+        if (faction != null) {
+            double reduction = Math.min(0.8, faction.upgrade(UpgradeType.POWER_LOSS)
+                    * plugin.getConfig().getDouble("upgrades.power-loss.reduction-per-level", 0.1));
+            loss *= 1.0 - reduction;
+        }
+        double after = current - loss;
+        operatorPower.put(uuid, after);
+        Bukkit.getScheduler().runTask(plugin, () -> writeRawPower(uuid, after));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -156,18 +179,47 @@ public final class FactionOperatorListener implements Listener {
         plugin.msg(player, "&7Spawner Land Value: &a$" + String.format(Locale.US, "%,.2f", value));
     }
 
-    @SuppressWarnings("unchecked")
     private void setAdminPower(UUID uuid, double value) {
+        double minimum = plugin.getConfig().getDouble("power.minimum", -10.0);
+        double maximum = plugin.getConfig().getDouble("power.maximum", 25.0);
+        if (value < minimum || value > maximum) operatorPower.put(uuid, value);
+        else operatorPower.remove(uuid);
+        writeRawPower(uuid, value);
+    }
+
+    private void enforceOperatorPower() {
+        for (Map.Entry<UUID, Double> entry : operatorPower.entrySet()) {
+            if (Double.compare(service.power(entry.getKey()), entry.getValue()) != 0) writeRawPower(entry.getKey(), entry.getValue());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void recoverOutOfRangeOperatorPower() {
+        try {
+            Field field = FactionService.class.getDeclaredField("power");
+            field.setAccessible(true);
+            Map<UUID, Double> values = (Map<UUID, Double>) field.get(service);
+            double minimum = plugin.getConfig().getDouble("power.minimum", -10.0);
+            double maximum = plugin.getConfig().getDouble("power.maximum", 25.0);
+            for (Map.Entry<UUID, Double> entry : values.entrySet()) {
+                if (entry.getValue() < minimum || entry.getValue() > maximum) operatorPower.put(entry.getKey(), entry.getValue());
+            }
+        } catch (ReflectiveOperationException ex) {
+            plugin.getLogger().warning("Could not recover uncapped operator power values: " + ex.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void writeRawPower(UUID uuid, double value) {
         if (!Double.isFinite(value)) return;
         try {
             Field field = FactionService.class.getDeclaredField("power");
             field.setAccessible(true);
-            Map<UUID, Double> power = (Map<UUID, Double>) field.get(service);
-            power.put(uuid, value);
+            Map<UUID, Double> values = (Map<UUID, Double>) field.get(service);
+            values.put(uuid, value);
             service.save();
         } catch (ReflectiveOperationException ex) {
             plugin.getLogger().severe("Could not apply uncapped admin power: " + ex.getMessage());
-            service.setPower(uuid, value);
         }
     }
 
