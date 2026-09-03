@@ -18,4 +18,10 @@ public interface MiraFactionsApi {
     boolean isSafeZone(Location location);
     boolean isWarZone(Location location);
     boolean canBuild(Player player, Location location);
+
+    /** True when the player's faction has the FLIGHT upgrade and the player has faction FLY permission. */
+    boolean hasFactionFlightEntitlement(Player player);
+
+    /** Describes the player's relationship to the territory at the supplied location for MiraFly policy checks. */
+    FlightTerritory flightTerritory(Player player, Location location);
 }
