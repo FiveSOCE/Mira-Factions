@@ -1,5 +1,9 @@
 prefix: "&5[MiraFactions]&r "
 
+faction:
+  member-limit: 20
+  max-title-length: 20
+
 power:
   starting: 10.0
   minimum: -10.0
@@ -10,19 +14,110 @@ power:
 
 claims:
   worlds: []
-  protect-build: true
-  protect-containers: true
-  protect-interactions: true
-  protect-explosions: true
+  max-radius: 5
+
+raiding:
+  allow-build-break: true
+  allow-containers: true
+  allow-interactions: true
+  allow-explosions: true
 
 combat:
   friendly-fire: false
   ally-friendly-fire: false
+  truce-friendly-fire: false
+
+invites:
+  expire-minutes: 30
+
+teleports:
+  warmup-seconds: 5
+  cooldown-seconds: 30
 
 home:
   warmup-seconds: 5
   cooldown-seconds: 30
+  respawn-at-faction-home: false
+
+warps:
+  base-limit: 1
+
+tnt:
+  base-capacity: 1728
+
+vault:
+  base-slots: 9
+
+zones:
+  base-limit: 1
+
+shield:
+  duration-minutes-per-level: 30
+  cooldown-minutes: 1440
+
+rent:
+  per-claim: 0.0
+  failure-policy: "debt"
+
+near:
+  radius: 100.0
+
+stuck:
+  search-radius-chunks: 10
+
+map:
+  radius: 4
+
+seechunk:
+  particle: "END_ROD"
+
+members:
+  login-notifications: true
+
+chat:
+  public-faction-tag: true
+
+upgrades:
+  cost-base: 10000.0
+  cost-multiplier: 2.0
+  costs:
+    power: 1.0
+    member_limit: 1.0
+    warp_limit: 0.75
+    vault_size: 1.0
+    tnt_capacity: 0.75
+    shield: 2.5
+    flight: 3.0
+    damage: 2.0
+    defense: 2.0
+    power_regen: 1.25
+    power_loss: 1.5
+    mob_drops: 1.0
+    mob_xp: 1.0
+    crop_yield: 0.75
+    crop_growth: 0.75
+    spawner_rate: 1.5
+    zone_limit: 0.75
+  power:
+    per-level: 10.0
+    individual-max-per-level: 0.0
+  member-limit:
+    per-level: 5
+  warp-limit:
+    per-level: 1
+  vault-size:
+    per-level: 9
+  tnt-capacity:
+    per-level: 1728
+  zone-limit:
+    per-level: 1
+  power-loss:
+    reduction-per-level: 0.10
+  power-regen:
+    bonus-per-level: 0.20
 
 messages:
-  territory-enter: "&aEntering &f%faction% &aterritory"
-  territory-leave: "&7Entering Wilderness"
+  territory-faction: "&aEntering &f%faction% &aterritory"
+  territory-wilderness: "&7Entering Wilderness"
+  territory-safezone: "&aEntering SafeZone"
+  territory-warzone: "&cEntering WarZone"
