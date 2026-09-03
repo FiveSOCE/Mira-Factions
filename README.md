@@ -4,9 +4,9 @@ Command-first faction warfare for **Paper 1.21.11 / Java 21**, built for the Mir
 
 ## Download
 
-Current release: **v0.2.3**
+Current release: **v0.2.4**
 
-[**Download MiraFactions v0.2.3**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.3/MiraFactions-0.2.3.jar)
+[**Download MiraFactions v0.2.4**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.4/MiraFactions-0.2.4.jar)
 
 [View all releases](https://github.com/FiveSOCE/Mira-Factions/releases)
 
@@ -19,7 +19,52 @@ Current release: **v0.2.3**
 - PlaceholderAPI optional
 - MiraShop and MiraSpawners recommended for typed-spawner faction land value
 
-## v0.2.3
+## v0.2.4 faction wealth
+
+### Faction value breakdown
+
+```text
+/f value
+/f value <faction>
+```
+
+Faction value is now presented as a real wealth breakdown:
+
+```text
+Total Wealth:        $12,450,000
+Spawner Land Value:  $11,900,000
+Faction Bank:           $550,000
+Placed Spawners:               42
+```
+
+The command then lists the exact typed spawners found in claimed land, including MiraSpawners stack sizes:
+
+```text
+Zombie Spawner x64 = $11,200,000
+Blaze Spawner x1   =    $650,000
+```
+
+Spawner value reads the typed BUY price from MiraShop and falls back to Essentials generic spawner worth when a typed price is unavailable.
+
+This is a live scan of the faction's currently claimed chunks. There is no spawner-age or value-maturation mechanic.
+
+### Wealth-based FTop
+
+```text
+/f top
+```
+
+Faction Top is now ranked by:
+
+```text
+Spawner Land Value + Faction Bank = Total Wealth
+```
+
+The top 10 output shows each faction's total wealth, land/spawner value and faction bank value.
+
+This turns placed economic assets into the main competitive faction-value metric instead of ranking factions by raw power alone.
+
+## v0.2.3 faction utilities
 
 ### Faction list
 
@@ -29,31 +74,6 @@ Current release: **v0.2.3**
 ```
 
 Lists every faction using **10 factions per page**. Entries show online/total members, faction power, claimed chunks and RAIDABLE state.
-
-### Faction land value
-
-MiraFactions calculates faction land value from spawners physically located inside claimed chunks.
-
-```text
-/f value
-/f value <faction>
-/f info [faction]
-```
-
-The value system reads:
-
-1. the actual mob type of each placed spawner
-2. the MiraSpawners stack size stored on that block
-3. the matching typed spawner BUY value from MiraShop
-4. Essentials generic spawner worth as a fallback when MiraShop has no typed value
-
-Example:
-
-```text
-64 stacked Zombie Spawners x $150,000 = $9,600,000 land value
-```
-
-Land value is intentionally spawner-based rather than assigning arbitrary value to every normal block in a claim.
 
 ### Power
 
@@ -66,34 +86,30 @@ Minimum: -10
 Death loss: 2
 ```
 
-Faction claim capacity remains based on summed faction power. If claims exceed supported power, the faction becomes RAIDABLE.
-
-Operators can directly set uncapped power with:
+Operators can directly set uncapped current power with:
 
 ```text
 /fa power <player> <amount>
 ```
 
-Admin-set power may exceed normal player limits, for example:
+For example:
 
 ```text
 /fa power FiveS 100
 ```
 
-Out-of-range operator power is preserved rather than being snapped back to the normal 25 cap by regeneration. Death still subtracts the normal configured power loss, so 100 becomes 98 with the default death loss.
+Operator-set power can exceed normal limits and remains stable through normal regeneration. Death still subtracts the configured power loss.
 
-### Larger faction map
+### Larger map and auto-map
 
-`/f map` defaults to radius **8**, giving a **17 x 17 chunk** territory view centered on the player.
-
-Auto-map remains available:
+`/f map` defaults to a **17 x 17 chunk** view centered on the player.
 
 ```text
 /f map auto
 /f automap
 ```
 
-When enabled, the map redraws whenever that player crosses into another chunk.
+toggles automatic map redraws whenever that player enters a new chunk.
 
 ## Faction lifecycle and membership
 
@@ -272,5 +288,5 @@ gradle clean build
 Output:
 
 ```text
-build/libs/MiraFactions-0.2.3.jar
+build/libs/MiraFactions-0.2.4.jar
 ```
