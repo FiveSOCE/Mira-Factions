@@ -4,9 +4,9 @@ Command-first faction warfare for **Paper 1.21.11 / Java 21**, built for the Mir
 
 ## Download
 
-Current release: **v0.2.0**
+Current release: **v0.2.1**
 
-[**Download MiraFactions v0.2.0**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.0/MiraFactions-0.2.0.jar)
+[**Download MiraFactions v0.2.1**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.1/MiraFactions-0.2.1.jar)
 
 [View all releases](https://github.com/FiveSOCE/Mira-Factions/releases)
 
@@ -18,12 +18,23 @@ Current release: **v0.2.0**
 - A Vault-compatible economy provider
 - PlaceholderAPI optional
 
-## v0.2.0
+## v0.2.1
 
-MiraFactions is now command-first. Inventory GUIs are retained only where inventory interaction is useful:
+MiraFactions is command-first. Inventory GUIs are retained only where inventory interaction is useful:
 
 - `/f upgrades`
 - `/f vault`
+
+### Auto-map
+
+Players can toggle automatic faction-map output with either:
+
+```text
+/f map auto
+/f automap
+```
+
+When enabled, the relation-colored faction map redraws every time that player enters a new chunk. Auto-map is session based and disables when the player logs out or the server restarts.
 
 ### Faction lifecycle and membership
 
@@ -57,6 +68,7 @@ Claim tools include:
 - `/f unclaim`
 - `/f unclaim all`
 - `/f map`
+- `/f map auto`
 - `/f seechunk`
 
 Territory protection covers block breaking/placing, buckets, containers, interactions, explosions, pistons, liquid flow and cross-border hopper transfers.
@@ -107,7 +119,7 @@ Chat channels:
 /f chat truce
 ```
 
-Public chat can display a faction tag.
+Public chat can display a faction tag. Operators can monitor private faction channels with `/fa chatspy` without receiving duplicate spy lines for channels they would already normally receive.
 
 ### Homes and warps
 
@@ -147,7 +159,7 @@ Capacity can be increased through faction upgrades.
 
 Factions can purchase Shield upgrades and activate timed raid protection with `/f shield`.
 
-Admins can enable or stop server-wide grace periods with `/fa grace`.
+Admins can enable or stop server-wide grace periods with `/fa grace` and can clear/reset faction shields from `/fa shield`.
 
 ### Faction flight
 
@@ -199,6 +211,8 @@ Current upgrade families:
 
 Gameplay upgrades are functional. Spawner Rate accelerates the actual spawner block delay instead of creating duplicate unmanaged mobs, so it remains compatible with the normal spawner event pipeline.
 
+Operators can directly set or add upgrade levels with `/fa upgrade` for administration/testing.
+
 ### Utility commands
 
 - `/f info [faction]`
@@ -217,21 +231,39 @@ When PlaceholderAPI is present, MiraFactions registers `%mirafactions_*%` placeh
 
 MiraFactions registers a `MiraFactionsApi` with Bukkit's ServicesManager for other Mira plugins. It exposes player factions, territory ownership, relations, player/faction power, raidability, SafeZone/WarZone checks and build-permission queries.
 
-### Admin commands
+### `/fa` operator suite
+
+`/fa help [1-3]` displays the full operator command set. Current controls include:
 
 ```text
+/fa bypass
+/fa chatspy
 /fa reload
 /fa save
-/fa bypass
-/fa power <set|add> <player> <amount>
+/fa info <faction>
 /fa disband <faction>
-/fa claim <safezone|warzone|wilderness>
-/fa grace <start <minutes>|stop>
-/fa peaceful <faction>
-/fa permanent <faction>
+/fa rename <faction> <newName>
+/fa forcejoin <player> <faction>
+/fa forcekick <player>
+/fa forcerole <player> <rank>
+/fa forcehome <player> <faction>
+/fa power <set|add> <player> <amount>
+/fa powerboost <set|add> <faction> <amount>
+/fa permanentpower <set|clear> <faction> [amount]
 /fa money <set|add> <faction> <amount>
 /fa tnt <set|add> <faction> <amount>
+/fa upgrade <set|add> <faction> <upgrade> <level>
+/fa claim <safezone|warzone|wilderness>
+/fa grace <status|start <minutes>|stop>
+/fa peaceful <faction>
+/fa permanent <faction>
+/fa rentexempt <faction>
+/fa shield <clear|reset> <faction>
 ```
+
+The operator suite includes context-aware tab completion for online players, factions, ranks, upgrade types and sub-actions.
+
+`forcejoin`, `forcekick` and `forcehome` currently require the target player to be online so runtime membership/teleport state stays consistent without editing player data behind Bukkit's back.
 
 ## Permissions
 
@@ -247,7 +279,7 @@ Runtime faction state is stored at:
 plugins/MiraFactions/factions.yml
 ```
 
-v0.2.0 persists factions, ranks, titles, power, claims, special territory, relations, requests, permissions, relation access, invites, bans, homes, warps, faction bank, TNT bank, dues/debt, shields, upgrades, vault contents, zones, peaceful/permanent state and grace state.
+MiraFactions persists factions, ranks, titles, power, claims, special territory, relations, requests, permissions, relation access, invites, bans, homes, warps, faction bank, TNT bank, dues/debt, shields, upgrades, vault contents, zones, peaceful/permanent state and grace state.
 
 Existing v0.1.0 faction data is migrated where possible, including legacy homes, invites and alliance requests.
 
@@ -260,5 +292,5 @@ gradle clean build
 Output:
 
 ```text
-build/libs/MiraFactions-0.2.0.jar
+build/libs/MiraFactions-0.2.1.jar
 ```
