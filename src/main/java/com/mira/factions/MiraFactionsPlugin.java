@@ -2,16 +2,10 @@ package com.mira.factions;
 
 import com.mira.factions.api.*;
 import com.mira.factions.command.*;
+import com.mira.factions.gui.FTopPodiumService;
 import com.mira.factions.gui.FactionGuiService;
 import com.mira.factions.hook.MiraFactionsPlaceholderExpansion;
-import com.mira.factions.listener.FactionAdminAuditListener;
-import com.mira.factions.listener.FactionHistoryAliasListener;
-import com.mira.factions.listener.FactionHistoryListener;
-import com.mira.factions.listener.FactionHistoryTabListener;
-import com.mira.factions.listener.FactionListener;
-import com.mira.factions.listener.FactionOperatorListener;
-import com.mira.factions.listener.FactionUpgradeAuditListener;
-import com.mira.factions.listener.FactionUpgradeListener;
+import com.mira.factions.listener.*;
 import com.mira.factions.service.*;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -28,6 +22,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
     private EconomyHook economy;
     private FactionHistoryService history;
     private FactionLandValueService landValue;
+    private FactionSeasonService seasons;
 
     @Override
     public void onEnable() {
@@ -36,10 +31,13 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         factions = new FactionService(this, economy);
         history = new FactionHistoryService(this);
         landValue = new FactionLandValueService(this);
+        seasons = new FactionSeasonService(this);
         history.initializeBanks(factions.all());
         FactionGuiService gui = new FactionGuiService(this, factions);
+        FTopPodiumService podium = new FTopPodiumService(this, factions, landValue, seasons);
 
         FactionHistoryListener historyListener = new FactionHistoryListener(this, factions, history, landValue);
+        FactionSeasonListener seasonListener = new FactionSeasonListener(this, factions, landValue, seasons);
         getServer().getPluginManager().registerEvents(new FactionHistoryAliasListener(), this);
         getServer().getPluginManager().registerEvents(historyListener, this);
         getServer().getPluginManager().registerEvents(new FactionHistoryTabListener(), this);
@@ -48,6 +46,9 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new FactionUpgradeAuditListener(this, factions, history), this);
         getServer().getPluginManager().registerEvents(new FactionUpgradeListener(this, factions), this);
         getServer().getPluginManager().registerEvents(new FactionOperatorListener(this, factions), this);
+        getServer().getPluginManager().registerEvents(seasonListener, this);
+        getServer().getPluginManager().registerEvents(podium, this);
+        getServer().getPluginManager().registerEvents(new FactionSeasonCommandListener(this, factions, seasons, podium), this);
 
         FactionCommand factionExecutor = new FactionCommand(this, factions, gui);
         PluginCommand factionCommand = getCommand("faction");
@@ -80,11 +81,13 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, () -> history.pollBanks(factions.all()), 20L, 20L);
         long valueHistoryTicks = Math.max(1L, getConfig().getLong("history.value-snapshot-minutes", 10L)) * 60L * 20L;
         Bukkit.getScheduler().runTaskTimer(this, historyListener::snapshotValues, 40L, valueHistoryTicks);
+        long seasonTicks = Math.max(1L, getConfig().getLong("seasons.snapshot-minutes", 10L)) * 60L * 20L;
+        Bukkit.getScheduler().runTaskTimer(this, seasonListener::snapshotAll, 60L, seasonTicks);
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) factions.renderSeeChunk(player);
         }, 10L, 10L);
 
-        getLogger().info("MiraFactions v" + getPluginMeta().getVersion() + " enabled with " + factions.all().size() + " faction(s). Vault economy: " + economy.available());
+        getLogger().info("MiraFactions v" + getPluginMeta().getVersion() + " enabled with " + factions.all().size() + " faction(s). Season: " + seasons.currentSeason());
     }
 
     @Override
@@ -93,16 +96,11 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         getServer().getServicesManager().unregisterAll(this);
     }
 
-    public Component component(String raw) {
-        return AMPERSAND.deserialize(raw == null ? "" : raw);
-    }
-
-    public void msg(CommandSender sender, String raw) {
-        sender.sendMessage(component(getConfig().getString("prefix", "&5[MiraFactions]&r ") + raw));
-    }
-
+    public Component component(String raw) { return AMPERSAND.deserialize(raw == null ? "" : raw); }
+    public void msg(CommandSender sender, String raw) { sender.sendMessage(component(getConfig().getString("prefix", "&5[MiraFactions]&r ") + raw)); }
     public FactionService factions() { return factions; }
     public EconomyHook economy() { return economy; }
     public FactionHistoryService history() { return history; }
     public FactionLandValueService landValue() { return landValue; }
+    public FactionSeasonService seasons() { return seasons; }
 }
