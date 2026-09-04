@@ -4,7 +4,7 @@ MiraFactions is the power, territory, raiding and faction-management system for 
 
 ## Download
 
-[**Download MiraFactions v0.2.8**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.8/MiraFactions-0.2.8.jar)
+[**Download MiraFactions v0.2.9**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.9/MiraFactions-0.2.9.jar)
 
 ## Requirements / Dependencies
 
@@ -32,7 +32,7 @@ A faction's claim capacity is `floor(faction power)`. If a non-peaceful faction 
 
 Claims are chunk-based. Normal faction members claim land with `/f claim`, `/f claim radius <radius>` or `/f autoclaim` when their faction rank has the internal `CLAIM` permission. Players can unclaim individual chunks or all faction land when they have `UNCLAIM` access.
 
-Administrators can create special territory with `/fa claim safezone`, `/fa claim warzone` and `/fa claim wilderness`. v0.2.8 also adds `/fa claim <Faction> <Amount>`, which force-claims the nearest requested number of chunks around the administrator for the selected faction, and `/fa autoclaim <Faction>`, which claims chunks for that faction as the administrator crosses chunk borders. Admin faction claiming can replace ordinary faction ownership but will not overwrite SafeZone or WarZone chunks.
+Administrators can create special territory with `/fa claim safezone`, `/fa claim warzone` and `/fa claim wilderness`. v0.2.9 also adds `/fa claim <Faction> <Amount>`, which force-claims the nearest requested number of chunks around the administrator for the selected faction, and `/fa autoclaim <Faction>`, which claims chunks for that faction as the administrator crosses chunk borders. Admin faction claiming can replace ordinary faction ownership but will not overwrite SafeZone or WarZone chunks.
 
 ### SafeZone and WarZone protection
 
@@ -206,8 +206,8 @@ All `/fa` commands require `mirafactions.admin`. Aliases for `/fa` are `/fadmin`
 | `/fa claim warzone` | Converts the current chunk to WarZone. |
 | `/fa claim wilderness` | Removes special/faction ownership from the current chunk and makes it Wilderness. |
 | `/fa claim <Faction> <Amount>` | Force-claims 1-10,000 nearby chunks for the selected faction. Ordinary faction claims may be replaced, but SafeZone/WarZone are never overwritten. |
-| `/fa autoclaim <Faction>` | Enables admin autoclaim for a selected faction and claims chunks as the administrator crosses boundaries. Running it again for the same faction toggles it off. |
-| `/fa autoclaim off` | Disables admin faction autoclaim. |
+| `/fa autoclaim <Faction>` | Enables admin autoclaim for a selected faction and claims chunks as the administrator crosses boundaries. Running it again for the same faction toggles it off. |\n| `/fa autoclaim safezone` | Converts the current chunk to SafeZone immediately, then automatically converts each newly entered chunk to SafeZone. Run it again or use `off` to disable. |\n| `/fa autoclaim warzone` | Converts the current chunk to WarZone immediately, then automatically converts each newly entered chunk to WarZone. Run it again or use `off` to disable. |
+| `/fa autoclaim off` | Disables any active admin faction, SafeZone or WarZone autoclaim mode. |
 | `/fa grace status` | Shows whether server grace is active. |
 | `/fa grace start <minutes>` | Starts server grace for the specified duration. |
 | `/fa grace stop` | Stops server grace. |
