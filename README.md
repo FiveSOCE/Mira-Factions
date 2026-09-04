@@ -4,7 +4,7 @@ MiraFactions is the power, territory, raiding and faction-management system for 
 
 ## Download
 
-[**Download MiraFactions v0.2.11**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.11/MiraFactions-0.2.11.jar)
+[**Download MiraFactions v0.2.12**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.12/MiraFactions-0.2.12.jar)
 
 ## Requirements / Dependencies
 
@@ -32,7 +32,7 @@ A faction's claim capacity is `floor(faction power)`. If a non-peaceful faction 
 
 Claims are chunk-based. Normal faction members claim land with `/f claim`, `/f claim radius <radius>` or `/f autoclaim` when their faction rank has the internal `CLAIM` permission. Players can unclaim individual chunks or all faction land when they have `UNCLAIM` access.
 
-Administrators can create special territory with `/fa claim safezone`, `/fa claim warzone` and `/fa claim wilderness`. v0.2.11 also adds `/fa claim <Faction> <Amount>`, which force-claims the nearest requested number of chunks around the administrator for the selected faction, and `/fa autoclaim <Faction>`, which claims chunks for that faction as the administrator crosses chunk borders. Admin faction claiming can replace ordinary faction ownership but will not overwrite SafeZone or WarZone chunks.
+Administrators can create special territory with `/fa claim safezone`, `/fa claim warzone` and `/fa claim wilderness`. v0.2.12 also adds `/fa claim <Faction> <Amount>`, which force-claims the nearest requested number of chunks around the administrator for the selected faction, and `/fa autoclaim <Faction>`, which claims chunks for that faction as the administrator crosses chunk borders. Admin faction claiming can replace ordinary faction ownership but will not overwrite SafeZone or WarZone chunks.
 
 ### SafeZone and WarZone protection
 
@@ -40,6 +40,7 @@ SafeZone and WarZone now have deliberately different rules.
 
 **SafeZone** remains the strict protected territory:
 
+- players may open/use chests, trapped chests, barrels, ender chests, anvils and enchanting tables
 - no normal player damage
 - no projectile launches or combat throwables
 - no hostile potion/area-effect application to protected players
@@ -50,6 +51,7 @@ SafeZone and WarZone now have deliberately different rules.
 
 **WarZone** is now a full PvP/combat arena with terrain protection only:
 
+- players may open/use chests, trapped chests, barrels, ender chests, anvils and enchanting tables
 - player-vs-player damage is allowed
 - melee with any held item or empty hand is allowed
 - bows and crossbows are allowed
