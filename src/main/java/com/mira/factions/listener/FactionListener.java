@@ -113,6 +113,13 @@ public final class FactionListener implements Listener {
     public void onInteract(PlayerInteractEvent event) {
         Block block = event.getClickedBlock();
         if (block == null || event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+
+        TerritoryType territory = service.territoryType(block.getLocation());
+        if ((territory == TerritoryType.SAFEZONE || territory == TerritoryType.WARZONE)
+                && isProtectedZoneUtility(block.getType())) {
+            return;
+        }
+
         FactionPermission permission = interactionPermission(block);
         if (!service.can(event.getPlayer(), block.getLocation(), permission)) deny(event, event.getPlayer());
     }
@@ -245,6 +252,15 @@ public final class FactionListener implements Listener {
                 if (factionZone != null && !factionZone.greeting().isBlank()) player.sendActionBar(plugin.component(factionZone.greeting()));
             }
         } else zone.remove(player.getUniqueId());
+    }
+
+    private boolean isProtectedZoneUtility(Material type) {
+        return switch (type) {
+            case CHEST, TRAPPED_CHEST, BARREL, ENDER_CHEST,
+                    ANVIL, CHIPPED_ANVIL, DAMAGED_ANVIL,
+                    ENCHANTING_TABLE -> true;
+            default -> false;
+        };
     }
 
     private FactionPermission interactionPermission(Block block) {
