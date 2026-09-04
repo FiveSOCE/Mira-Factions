@@ -42,7 +42,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Absolute SafeZone / WarZone rules. Normal faction permissions and relations do not weaken these protections.
+ * SafeZone is fully protected. WarZone protects terrain only while allowing normal PvP/combat use.
  */
 public final class ProtectedZoneListener implements Listener {
     private final MiraFactionsPlugin plugin;
@@ -90,7 +90,7 @@ public final class ProtectedZoneListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
-        if (protectedZone(event.getLocation())) event.setCancelled(true);
+        if (safeZone(event.getLocation())) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -103,7 +103,7 @@ public final class ProtectedZoneListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onProtectedEntityDamage(EntityDamageByEntityEvent event) {
-        if (!protectedZone(event.getEntity().getLocation())) return;
+        if (!safeZone(event.getEntity().getLocation())) return;
         Player player = attackingPlayer(event.getDamager());
         if (player != null && !bypass(player) && !(event.getEntity() instanceof Player)) {
             event.setCancelled(true);
@@ -121,7 +121,7 @@ public final class ProtectedZoneListener implements Listener {
     public void onProjectileLaunch(ProjectileLaunchEvent event) {
         Projectile projectile = event.getEntity();
         if (!(projectile.getShooter() instanceof Player player)) return;
-        if (protectedZone(player.getLocation()) && !bypass(player)) {
+        if (safeZone(player.getLocation()) && !bypass(player)) {
             event.setCancelled(true);
             plugin.msg(player, "&cYou cannot launch projectiles in this protected zone.");
         }
@@ -131,7 +131,7 @@ public final class ProtectedZoneListener implements Listener {
     public void onInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         Location check = event.getClickedBlock() == null ? player.getLocation() : event.getClickedBlock().getLocation();
-        if (!protectedZone(check) || bypass(player)) return;
+        if (!safeZone(check) || bypass(player)) return;
 
         ItemStack item = event.getItem();
         if (event.getClickedBlock() != null) {
@@ -149,7 +149,7 @@ public final class ProtectedZoneListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInteractEntity(PlayerInteractEntityEvent event) {
-        if (protectedZone(event.getRightClicked().getLocation()) && !bypass(event.getPlayer())) {
+        if (safeZone(event.getRightClicked().getLocation()) && !bypass(event.getPlayer())) {
             event.setCancelled(true);
             denied(event.getPlayer());
         }
@@ -157,7 +157,7 @@ public final class ProtectedZoneListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
-        if (protectedZone(event.getRightClicked().getLocation()) && !bypass(event.getPlayer())) {
+        if (safeZone(event.getRightClicked().getLocation()) && !bypass(event.getPlayer())) {
             event.setCancelled(true);
             denied(event.getPlayer());
         }
@@ -261,13 +261,13 @@ public final class ProtectedZoneListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInventoryMove(InventoryMoveItemEvent event) {
-        if (protectedInventory(event.getSource().getHolder()) || protectedInventory(event.getDestination().getHolder())) {
+        if (safeInventory(event.getSource().getHolder()) || safeInventory(event.getDestination().getHolder())) {
             event.setCancelled(true);
         }
     }
 
-    private boolean protectedInventory(InventoryHolder holder) {
-        return holder instanceof BlockState state && protectedZone(state.getLocation());
+    private boolean safeInventory(InventoryHolder holder) {
+        return holder instanceof BlockState state && safeZone(state.getLocation());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
