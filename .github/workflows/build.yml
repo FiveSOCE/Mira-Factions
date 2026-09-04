@@ -24,16 +24,16 @@ jobs:
         run: gradle clean build --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: MiraFactions-0.2.10
-          path: build/libs/MiraFactions-0.2.10.jar
-      - name: Publish v0.2.10 release if missing
+          name: MiraFactions-0.2.11
+          path: build/libs/MiraFactions-0.2.11.jar
+      - name: Publish v0.2.11 release if missing
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view v0.2.10 >/dev/null 2>&1; then
-            gh release create v0.2.10 \
-              build/libs/MiraFactions-0.2.10.jar \
+          if ! gh release view v0.2.11 >/dev/null 2>&1; then
+            gh release create v0.2.11 \
+              build/libs/MiraFactions-0.2.11.jar \
               --target "${{ github.sha }}" \
-              --title "MiraFactions v0.2.10" \
-              --notes "Protected-zone hardening release. Extends SafeZone and WarZone protection across direct build/break, buckets, fluids, pistons, fire, dispensers, hanging/entity manipulation, hopper movement, entity block changes and SafeZone hostile potion/effect paths while retaining existing projectile, spawn and damage protections."
+              --title "MiraFactions v0.2.11" \
+              --notes "WarZone combat-policy update. WarZone now allows normal PvP, bows, crossbows, tridents, ender pearls, throwables, potions and entity interaction while preserving terrain protection against building, fluids, pistons, fire and explosion block damage. SafeZone remains fully protected."
           fi
