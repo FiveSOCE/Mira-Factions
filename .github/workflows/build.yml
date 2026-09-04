@@ -24,16 +24,16 @@ jobs:
         run: gradle clean build --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: MiraFactions-0.2.9
-          path: build/libs/MiraFactions-0.2.9.jar
-      - name: Publish v0.2.9 release if missing
+          name: MiraFactions-0.2.10
+          path: build/libs/MiraFactions-0.2.10.jar
+      - name: Publish v0.2.10 release if missing
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view v0.2.9 >/dev/null 2>&1; then
-            gh release create v0.2.9 \
-              build/libs/MiraFactions-0.2.9.jar \
+          if ! gh release view v0.2.10 >/dev/null 2>&1; then
+            gh release create v0.2.10 \
+              build/libs/MiraFactions-0.2.10.jar \
               --target "${{ github.sha }}" \
-              --title "MiraFactions v0.2.9" \
-              --notes "Fixes admin special-territory autoclaim with /fa autoclaim safezone and /fa autoclaim warzone. The current chunk is claimed immediately and each newly entered chunk is converted automatically. Existing faction autoclaim and protected-zone hardening remain intact."
+              --title "MiraFactions v0.2.10" \
+              --notes "Protected-zone hardening release. Extends SafeZone and WarZone protection across direct build/break, buckets, fluids, pistons, fire, dispensers, hanging/entity manipulation, hopper movement, entity block changes and SafeZone hostile potion/effect paths while retaining existing projectile, spawn and damage protections."
           fi
