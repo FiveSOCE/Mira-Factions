@@ -135,6 +135,9 @@ public final class ProtectedZoneListener implements Listener {
 
         ItemStack item = event.getItem();
         if (event.getClickedBlock() != null) {
+            Material clicked = event.getClickedBlock().getType();
+            if (isAllowedUtility(clicked)) return;
+
             event.setCancelled(true);
             denied(player);
             return;
@@ -161,6 +164,15 @@ public final class ProtectedZoneListener implements Listener {
             event.setCancelled(true);
             denied(event.getPlayer());
         }
+    }
+
+    private boolean isAllowedUtility(Material type) {
+        return switch (type) {
+            case CHEST, TRAPPED_CHEST, BARREL, ENDER_CHEST,
+                    ANVIL, CHIPPED_ANVIL, DAMAGED_ANVIL,
+                    ENCHANTING_TABLE -> true;
+            default -> false;
+        };
     }
 
     private boolean isThrowableOrLaunchItem(Material type) {
