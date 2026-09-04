@@ -4,7 +4,7 @@ MiraFactions is the power, territory, raiding and faction-management system for 
 
 ## Download
 
-[**Download MiraFactions v0.2.10**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.10/MiraFactions-0.2.10.jar)
+[**Download MiraFactions v0.2.11**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.11/MiraFactions-0.2.11.jar)
 
 ## Requirements / Dependencies
 
@@ -32,22 +32,51 @@ A faction's claim capacity is `floor(faction power)`. If a non-peaceful faction 
 
 Claims are chunk-based. Normal faction members claim land with `/f claim`, `/f claim radius <radius>` or `/f autoclaim` when their faction rank has the internal `CLAIM` permission. Players can unclaim individual chunks or all faction land when they have `UNCLAIM` access.
 
-Administrators can create special territory with `/fa claim safezone`, `/fa claim warzone` and `/fa claim wilderness`. v0.2.10 also adds `/fa claim <Faction> <Amount>`, which force-claims the nearest requested number of chunks around the administrator for the selected faction, and `/fa autoclaim <Faction>`, which claims chunks for that faction as the administrator crosses chunk borders. Admin faction claiming can replace ordinary faction ownership but will not overwrite SafeZone or WarZone chunks.
+Administrators can create special territory with `/fa claim safezone`, `/fa claim warzone` and `/fa claim wilderness`. v0.2.11 also adds `/fa claim <Faction> <Amount>`, which force-claims the nearest requested number of chunks around the administrator for the selected faction, and `/fa autoclaim <Faction>`, which claims chunks for that faction as the administrator crosses chunk borders. Admin faction claiming can replace ordinary faction ownership but will not overwrite SafeZone or WarZone chunks.
 
 ### SafeZone and WarZone protection
 
-SafeZone and WarZone have an absolute protection layer in addition to normal faction territory rules.
+SafeZone and WarZone now have deliberately different rules.
 
-- Normal players cannot build or break in protected territory under the faction territory rules.
-- Hostile and passive creature spawning is cancelled in both SafeZone and WarZone.
-- Players inside SafeZone are immune to all normal `EntityDamageEvent` damage unless they have a bypass. This covers melee, arrows/projectiles, fall damage, fire, lava, explosions, potion/environmental damage and other Bukkit damage causes. Fire ticks are also cleared when damage protection triggers.
-- SafeZone and WarZone block player projectile launches unless bypassed.
-- SafeZone and WarZone block spawn eggs and protected launch/throw items including bows, crossbows, tridents, snowballs, eggs, ender pearls, XP bottles, splash potions, lingering potions, firework rockets and wind charges.
-- Explosions cannot destroy blocks inside SafeZone or WarZone.
-- Protected zones now also stop direct block placement/breaking, bucket use, fluid flow, pistons crossing zone borders, fire/ignition, dispenser activity, hanging-entity placement/breaking, armor-stand/entity manipulation, protected container hopper movement and entity-driven block changes unless the relevant player bypass applies.
-- SafeZone additionally strips hostile potion/area-effect application paths from protected players.
-- WarZone intentionally remains a combat/damage-enabled area; SafeZone is the damage-safe territory.
-- `mirafactions.protectedzone.bypass`, `mirafactions.bypass`, or the administrator's toggled faction bypass can override these protected-zone restrictions where applicable.
+**SafeZone** remains the strict protected territory:
+
+- no normal player damage
+- no projectile launches or combat throwables
+- no hostile potion/area-effect application to protected players
+- no building/breaking
+- no protected entity manipulation
+- no buckets, terrain-changing fluids, pistons, fire or explosion block damage
+- creature spawning remains blocked
+
+**WarZone** is now a full PvP/combat arena with terrain protection only:
+
+- player-vs-player damage is allowed
+- melee with any held item or empty hand is allowed
+- bows and crossbows are allowed
+- tridents are allowed
+- ender pearls are allowed
+- snowballs and eggs are allowed
+- splash/lingering potions are allowed
+- wind charges and firework rockets are allowed
+- entity interaction/manipulation is allowed
+- combat-created explosions may damage entities, but cannot destroy WarZone blocks
+- normal creature spawning is allowed
+
+WarZone still prevents players or mechanics from changing/damaging the land:
+
+- block placement and breaking
+- bucket fill/empty
+- fluid movement across protected terrain
+- pistons moving blocks into/out of WarZone
+- fire/ignition/burning
+- dispenser-driven protected block changes
+- entity-driven block changes
+- hanging-entity placement/breaking
+- explosion block destruction
+
+SafeZone remains the non-combat area. WarZone is the combat area.
+
+`mirafactions.protectedzone.bypass`, `mirafactions.bypass`, or the administrator's toggled faction bypass can override applicable protection checks.
 
 ### Faction permissions and diplomacy
 
