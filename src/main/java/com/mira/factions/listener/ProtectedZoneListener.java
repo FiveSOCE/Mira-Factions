@@ -44,7 +44,7 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Absolute SafeZone / WarZone rules. Normal faction permissions and relations do not weaken these protections.
  */
-public final class ProtectedZoneListener {
+public final class ProtectedZoneListener implements Listener {
     private final MiraFactionsPlugin plugin;
     private final FactionService service;
 
