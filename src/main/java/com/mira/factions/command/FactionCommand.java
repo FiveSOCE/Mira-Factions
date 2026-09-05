@@ -64,10 +64,13 @@ public final class FactionCommand implements TabExecutor {
             case "power" -> power(player, args);
             case "info", "show", "status" -> info(player, args);
             case "set" -> set(player, args);
-            case "perms", "permissions" -> permissions(player, args);
+            case "perms", "permissions" -> {
+                if (args.length == 1) { gui.openPermissions(player); yield true; }
+                yield permissions(player, args);
+            }
             case "money", "bank" -> money(player, args);
             case "tnt" -> tnt(player, args);
-            case "shield" -> shield(player);
+            case "shield" -> { gui.openShield(player); yield true; }
             case "fly" -> fly(player);
             case "upgrades", "upgrade" -> { gui.openUpgrades(player); yield true; }
             case "vault", "fvault" -> { gui.openVault(player); yield true; }
