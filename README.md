@@ -4,7 +4,7 @@ MiraFactions is the power, territory, raiding and faction-management system for 
 
 ## Download
 
-[**Download MiraFactions v0.2.13**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.13/MiraFactions-0.2.13.jar)
+[**Download MiraFactions v0.2.14**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.14/MiraFactions-0.2.14.jar)
 
 ## Requirements / Dependencies
 
@@ -32,7 +32,7 @@ A faction's claim capacity is `floor(faction power)`. If a non-peaceful faction 
 
 Claims are chunk-based. Normal faction members claim land with `/f claim`, `/f claim radius <radius>` or `/f autoclaim` when their faction rank has the internal `CLAIM` permission. Players can unclaim individual chunks or all faction land when they have `UNCLAIM` access.
 
-Administrators can create special territory with `/fa claim safezone`, `/fa claim warzone` and `/fa claim wilderness`. v0.2.13 also adds `/fa claim <Faction> <Amount>`, which force-claims the nearest requested number of chunks around the administrator for the selected faction, and `/fa autoclaim <Faction>`, which claims chunks for that faction as the administrator crosses chunk borders. Admin faction claiming can replace ordinary faction ownership but will not overwrite SafeZone or WarZone chunks.
+Administrators can create special territory with `/fa claim safezone`, `/fa claim warzone` and `/fa claim wilderness`. v0.2.14 also adds `/fa claim <Faction> <Amount>`, which force-claims the nearest requested number of chunks around the administrator for the selected faction, and `/fa autoclaim <Faction>`, which claims chunks for that faction as the administrator crosses chunk borders. Admin faction claiming can replace ordinary faction ownership but will not overwrite SafeZone or WarZone chunks.
 
 ### SafeZone and WarZone protection
 
@@ -263,3 +263,8 @@ These are Bukkit/server permission nodes. Faction-rank permissions listed earlie
 | `mirafactions.admin` | OP | Allows `/fa` administration, force-management and admin claim tools. |
 | `mirafactions.bypass` | OP | Bypasses normal faction territory protection and is also accepted by protected-zone checks. |
 | `mirafactions.protectedzone.bypass` | OP | Bypasses SafeZone/WarZone item/projectile restrictions and SafeZone damage protection. |
+
+
+## MiraCosmetics Integration (0.2.14)
+
+Integrates approved faction visuals with MiraCosmetics for claim, unclaim, SafeZone/WarZone entry, faction creation, upgrades and disband while keeping MiraCosmetics optional and authoritative for particles.
