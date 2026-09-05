@@ -54,6 +54,7 @@ zones:
 shield:
   duration-minutes-per-level: 30
   cooldown-minutes: 1440
+  block-when-raidable: true
 
 rent:
   per-claim: 0.0
@@ -108,6 +109,8 @@ upgrades:
     crop_growth: 0.75
     spawner_rate: 1.5
     zone_limit: 0.75
+    home_warmup: 1.25
+    warp_warmup: 1.0
   power:
     per-level: 10.0
     individual-max-per-level: 0.0
@@ -139,6 +142,12 @@ upgrades:
     extra-stage-chance-per-level: 0.10
   spawner-rate:
     speed-bonus-per-level: 0.10
+  home-warmup:
+    seconds-reduced-per-level: 1
+    minimum-seconds: 0
+  warp-warmup:
+    seconds-reduced-per-level: 1
+    minimum-seconds: 0
 
 messages:
   territory-faction: "&aEntering &f%faction% &aterritory"
