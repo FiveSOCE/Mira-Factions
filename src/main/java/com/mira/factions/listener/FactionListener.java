@@ -38,20 +38,78 @@ public final class FactionListener implements Listener {
         if (!(event.getView().getTopInventory().getHolder() instanceof FactionGuiService.Holder holder)) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
         Faction faction = service.byId(holder.factionId());
-        if (faction == null || service.of(player.getUniqueId()) != faction) { event.setCancelled(true); player.closeInventory(); return; }
+        if (faction == null || service.of(player.getUniqueId()) != faction) {
+            event.setCancelled(true);
+            player.closeInventory();
+            return;
+        }
+
+        int raw = event.getRawSlot();
 
         if (holder.menu() == FactionGuiService.Menu.UPGRADES) {
             event.setCancelled(true);
-            if (event.getRawSlot() < 0 || event.getRawSlot() >= event.getView().getTopInventory().getSize()) return;
-            UpgradeType type = gui.upgradeForSlot(event.getRawSlot());
+            if (raw < 0 || raw >= event.getView().getTopInventory().getSize()) return;
+            UpgradeType type = gui.upgradeForSlot(raw);
             if (type == null) return;
             respond(player, service.buyUpgrade(player, type));
             gui.openUpgrades(player);
             return;
         }
 
+        if (holder.menu() == FactionGuiService.Menu.PERMISSIONS) {
+            event.setCancelled(true);
+            if (faction.rank(player.getUniqueId()) != FactionRank.LEADER) {
+                player.closeInventory();
+                return;
+            }
+            FactionRank selected = gui.rankForSelectorSlot(raw);
+            if (selected != null) {
+                gui.openPermissionRank(player, selected);
+                return;
+            }
+            if (raw == 22) {
+                respond(player, service.resetPermissions(player));
+                gui.openPermissions(player);
+            }
+            return;
+        }
+
+        if (holder.menu() == FactionGuiService.Menu.PERMISSION_RANK) {
+            event.setCancelled(true);
+            if (faction.rank(player.getUniqueId()) != FactionRank.LEADER) {
+                player.closeInventory();
+                return;
+            }
+            if (raw == 49) {
+                gui.openPermissions(player);
+                return;
+            }
+            FactionPermission permission = gui.permissionForSlot(raw);
+            FactionRank selected = gui.rankFromContext(holder.context());
+            if (permission == null || selected == null) return;
+
+            boolean allowed = service.permissionAllowed(faction, selected, permission);
+            FactionRank minimum = allowed ? gui.nextHigher(selected) : selected;
+            respond(player, service.setPermission(player, permission, minimum));
+            gui.openPermissionRank(player, selected);
+            return;
+        }
+
+        if (holder.menu() == FactionGuiService.Menu.SHIELD) {
+            event.setCancelled(true);
+            if (raw == 15) {
+                respond(player, service.activateShield(player));
+                gui.openShield(player);
+            }
+            return;
+        }
+
+        if (holder.menu() != FactionGuiService.Menu.VAULT) {
+            event.setCancelled(true);
+            return;
+        }
+
         int allowed = service.vaultSlots(faction);
-        int raw = event.getRawSlot();
         if (raw >= 0 && raw < 54 && raw >= allowed) event.setCancelled(true);
         if (event.isShiftClick() && event.getClickedInventory() != null && event.getClickedInventory() == player.getInventory()) {
             int firstEmpty = firstEmptyVault(event.getView().getTopInventory(), allowed);
