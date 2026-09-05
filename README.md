@@ -4,7 +4,7 @@ MiraFactions is the power, territory, raiding and faction-management system for 
 
 ## Download
 
-[**Download MiraFactions v0.2.14**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.14/MiraFactions-0.2.14.jar)
+[**Download MiraFactions v0.2.15**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.15/MiraFactions-0.2.15.jar)
 
 ## Requirements / Dependencies
 
@@ -190,12 +190,12 @@ All normal `/f` commands require the Bukkit permission `mirafactions.use`. Indiv
 | `/f set open <true|false>` | Changes whether players can join without an invite. |
 | `/f set title <player> <title|clear>` | Sets or clears a member title. |
 | `/f set dues <amount>` | Sets daily member dues; Leader-only in the current implementation. |
-| `/f perms` / `/f permissions` | Lists or manages faction minimum-rank permissions. |
+| `/f perms` / `/f permissions` | Opens the faction rank-first permission GUI. Legacy direct permission/relation subcommands remain available. |
 | `/f perms relation <permission> <ally|truce|neutral|enemy> <allow|deny>` | Controls relation-based access for a faction permission. |
 | `/f money` / `/f bank` | Views/manages faction-bank functions according to faction economy permissions. |
 | `/f money history [page]` | Shows persistent faction bank transaction history. |
 | `/f tnt` | Views/deposits/withdraws faction TNT according to TNT permissions. |
-| `/f shield` | Activates the faction shield when the faction has the upgrade, permission and cooldown availability. |
+| `/f shield` | Opens the faction shield control/status GUI. Activation is blocked while the faction is raidable. |
 | `/f fly` | Delegates faction flight to MiraFly after entitlement checks. |
 | `/f upgrades` / `/f upgrade` | Opens the faction upgrade GUI. |
 | `/f vault` / `/f fvault` | Opens the faction vault. |
@@ -268,3 +268,15 @@ These are Bukkit/server permission nodes. Faction-rank permissions listed earlie
 ## MiraCosmetics Integration (0.2.14)
 
 Integrates approved faction visuals with MiraCosmetics for claim, unclaim, SafeZone/WarZone entry, faction creation, upgrades and disband while keeping MiraCosmetics optional and authoritative for particles.
+
+## Faction Control GUIs and Warmup Upgrades (0.2.15)
+
+v0.2.15 adds GUI-first control for faction permissions and shields while keeping the existing faction data model as the single authority.
+
+- `/f permissions` opens a rank-first permission editor backed by the faction's existing minimum-rank permission thresholds.
+- permission reset restores the normal MiraFactions defaults rather than creating a second permissions store.
+- `/f shield` opens a status/activation GUI showing upgrade level, active duration and cooldown state.
+- shield activation is refused while the faction is currently raidable.
+- the upgrade GUI now includes functional **Home Warmup** and **Warp Warmup** upgrades.
+- each warmup level reduces the configured faction teleport warmup without creating a second teleport system.
+- upgrade entries expose clearer category/current-effect/next-effect information.
