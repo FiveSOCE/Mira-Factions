@@ -4,6 +4,7 @@ import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.gui.FactionGuiService;
 import com.mira.factions.model.*;
 import com.mira.factions.service.FactionService;
+import com.mira.factions.util.CosmeticsBridge;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.*;
 import org.bukkit.block.*;
@@ -243,6 +244,11 @@ public final class FactionListener implements Listener {
                 case FACTION -> plugin.getConfig().getString("messages.territory-faction", "&aEntering &f%faction% &aterritory").replace("%faction%", owner == null ? "Wilderness" : owner.name());
             };
             player.sendActionBar(plugin.component(raw));
+            if (type == TerritoryType.SAFEZONE) {
+                CosmeticsBridge.play(player, "safezone_enter", location);
+            } else if (type == TerritoryType.WARZONE) {
+                CosmeticsBridge.play(player, "warzone_enter", location);
+            }
         }
         if (owner != null) {
             String zoneName = owner.zoneForClaim(service.claimKey(location));
