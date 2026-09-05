@@ -24,16 +24,16 @@ jobs:
         run: gradle clean build --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: MiraFactions-0.2.13
-          path: build/libs/MiraFactions-0.2.13.jar
-      - name: Publish v0.2.13 release if missing
+          name: MiraFactions-0.2.14
+          path: build/libs/MiraFactions-0.2.14.jar
+      - name: Publish v0.2.14 release if missing
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view v0.2.13 >/dev/null 2>&1; then
-            gh release create v0.2.13 \
-              build/libs/MiraFactions-0.2.13.jar \
+          if ! gh release view v0.2.14 >/dev/null 2>&1; then
+            gh release create v0.2.14 \
+              build/libs/MiraFactions-0.2.14.jar \
               --target "${{ github.sha }}" \
-              --title "MiraFactions v0.2.13" \
-              --notes "Fixes the duplicate faction-territory permission check that still blocked chests, barrels, ender chests, anvils and enchanting tables in SafeZone/WarZone. Utility access now bypasses both relevant interaction protection layers while land/combat rules remain unchanged."
+              --title "MiraFactions v0.2.14" \
+              --notes "Integrates approved faction visuals with MiraCosmetics for claim, unclaim, SafeZone/WarZone entry, faction creation, upgrades and disband while keeping MiraCosmetics optional and authoritative for particles."
           fi
