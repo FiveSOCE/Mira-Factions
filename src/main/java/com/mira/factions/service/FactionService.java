@@ -2,6 +2,7 @@ package com.mira.factions.service;
 
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.*;
+import com.mira.factions.util.CosmeticsBridge;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
@@ -112,6 +113,7 @@ public final class FactionService {
         playerFaction.put(player.getUniqueId(), faction.id());
         power.putIfAbsent(player.getUniqueId(), startingPower());
         save();
+        CosmeticsBridge.play(player, "faction_create", player.getLocation());
         return Result.ok("Created faction " + clean + ".");
     }
 
@@ -191,6 +193,10 @@ public final class FactionService {
 
     public Result forceDisband(Faction faction) {
         if (faction == null) return Result.fail("Faction not found.");
+        for (UUID member : new HashSet<>(faction.members().keySet())) {
+            Player online = Bukkit.getPlayer(member);
+            if (online != null) CosmeticsBridge.play(online, "faction_disband", online.getLocation());
+        }
         for (UUID member : new HashSet<>(faction.members().keySet())) {
             playerFaction.remove(member);
             clearTransient(member);
@@ -380,6 +386,7 @@ public final class FactionService {
                 save();
                 announce(existing, "&cEnemy faction " + faction.name() + " overclaimed one of your chunks!");
                 announce(faction, "&aOverclaimed a chunk from " + existing.name() + ".");
+                CosmeticsBridge.play(player, "faction_claim", location);
                 return Result.ok("Overclaimed enemy territory from " + existing.name() + ".");
             }
         }
@@ -387,6 +394,7 @@ public final class FactionService {
         faction.claims().add(key);
         claimOwner.put(key, faction.id());
         save();
+        CosmeticsBridge.play(player, "faction_claim", location);
         return Result.ok("Claimed this chunk for " + faction.name() + ".");
     }
 
@@ -417,6 +425,7 @@ public final class FactionService {
         faction.claimZones().remove(key);
         claimOwner.remove(key);
         save();
+        CosmeticsBridge.play(player, "faction_unclaim", player.getLocation());
         return Result.ok("Unclaimed this chunk.");
     }
 
@@ -758,6 +767,7 @@ public final class FactionService {
         faction.upgrades().put(type, next);
         save();
         announce(faction, "&dPurchased " + type.display() + " level " + next + " for " + economy.format(cost) + ".");
+        CosmeticsBridge.play(player, "faction_upgrade", player.getLocation());
         return Result.ok(type.display() + " upgraded to level " + next + ".");
     }
 
