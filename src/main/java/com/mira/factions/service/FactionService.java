@@ -534,6 +534,19 @@ public final class FactionService {
         return Result.ok(permission + " now requires " + rank + ".");
     }
 
+    public Result resetPermissions(Player actor) {
+        Faction faction = of(actor.getUniqueId());
+        if (faction == null) return Result.fail("You are not in a faction.");
+        if (faction.rank(actor.getUniqueId()) != FactionRank.LEADER) return Result.fail("Only the leader can edit faction permissions.");
+        faction.minimumRanks().clear();
+        save();
+        return Result.ok("Faction permissions reset to defaults.");
+    }
+
+    public boolean permissionAllowed(Faction faction, FactionRank rank, FactionPermission permission) {
+        return faction != null && rank != null && rank.atLeast(faction.minimum(permission));
+    }
+
     public Result setRelationPermission(Player actor, FactionPermission permission, Relation relation, boolean allow) {
         Faction faction = of(actor.getUniqueId());
         if (faction == null) return Result.fail("You are not in a faction.");
@@ -568,7 +581,7 @@ public final class FactionService {
         if (faction == null) return Result.fail("You are not in a faction.");
         if (!hasPermission(player, FactionPermission.HOME)) return Result.fail("You do not have faction permission to use home.");
         if (faction.home() == null) return Result.fail("Your faction has no home.");
-        return warmupTeleport(player, faction.home(), homeCooldown, "Faction home");
+        return warmupTeleport(player, faction, faction.home(), homeCooldown, "Faction home", UpgradeType.HOME_WARMUP);
     }
 
     public Result setWarp(Player player, String name) {
@@ -600,14 +613,20 @@ public final class FactionService {
         if (!hasPermission(player, FactionPermission.WARP)) return Result.fail("You do not have faction permission to use warps.");
         Location target = faction.warps().get(name == null ? "" : name.toLowerCase(Locale.ROOT));
         if (target == null) return Result.fail("Warp not found.");
-        return warmupTeleport(player, target, warpCooldown, "Faction warp");
+        return warmupTeleport(player, faction, target, warpCooldown, "Faction warp", UpgradeType.WARP_WARMUP);
     }
 
-    private Result warmupTeleport(Player player, Location target, Map<UUID, Long> cooldowns, String label) {
+    private Result warmupTeleport(Player player, Faction faction, Location target, Map<UUID, Long> cooldowns,
+                                  String label, UpgradeType warmupUpgrade) {
         long now = System.currentTimeMillis();
         long cooldown = cooldowns.getOrDefault(player.getUniqueId(), 0L);
         if (cooldown > now) return Result.fail(label + " is on cooldown for " + Math.max(1, (cooldown - now + 999) / 1000) + "s.");
-        int warmup = Math.max(0, plugin.getConfig().getInt("teleports.warmup-seconds", plugin.getConfig().getInt("home.warmup-seconds", 5)));
+        int baseWarmup = Math.max(0, plugin.getConfig().getInt("teleports.warmup-seconds", plugin.getConfig().getInt("home.warmup-seconds", 5)));
+        String path = warmupUpgrade == UpgradeType.HOME_WARMUP ? "upgrades.home-warmup" : "upgrades.warp-warmup";
+        int reduction = Math.max(0, plugin.getConfig().getInt(path + ".seconds-reduced-per-level", 1))
+                * faction.upgrade(warmupUpgrade);
+        int minimum = Math.max(0, plugin.getConfig().getInt(path + ".minimum-seconds", 0));
+        int warmup = Math.max(minimum, baseWarmup - reduction);
         Location start = player.getLocation().clone();
         plugin.msg(player, "&eTeleporting in &f" + warmup + "&e seconds. Do not move.");
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -742,6 +761,9 @@ public final class FactionService {
         long now = System.currentTimeMillis();
         if (faction.shieldUntil() > now) return Result.fail("Faction shield is already active.");
         if (faction.shieldCooldownUntil() > now) return Result.fail("Shield is on cooldown for " + formatDuration(faction.shieldCooldownUntil() - now) + ".");
+        if (plugin.getConfig().getBoolean("shield.block-when-raidable", true) && raidable(faction)) {
+            return Result.fail("You cannot activate a faction shield while your faction is raidable.");
+        }
         long durationMinutes = plugin.getConfig().getLong("shield.duration-minutes-per-level", 30L) * level;
         long cooldownMinutes = plugin.getConfig().getLong("shield.cooldown-minutes", 1440L);
         faction.shieldUntil(now + durationMinutes * 60_000L);
