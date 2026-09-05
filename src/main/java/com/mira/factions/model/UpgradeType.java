@@ -19,7 +19,9 @@ public enum UpgradeType {
     CROP_YIELD("Crop Yield", Material.WHEAT, 5),
     CROP_GROWTH("Crop Growth", Material.BONE_MEAL, 5),
     SPAWNER_RATE("Spawner Rate", Material.SPAWNER, 5),
-    ZONE_LIMIT("Zone Limit", Material.OAK_SIGN, 5);
+    ZONE_LIMIT("Zone Limit", Material.OAK_SIGN, 5),
+    HOME_WARMUP("Home Warmup", Material.CLOCK, 5),
+    WARP_WARMUP("Warp Warmup", Material.ENDER_EYE, 5);
 
     private final String display;
     private final Material icon;
