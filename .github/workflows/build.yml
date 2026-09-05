@@ -24,16 +24,16 @@ jobs:
         run: gradle clean build --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: MiraFactions-0.2.14
-          path: build/libs/MiraFactions-0.2.14.jar
-      - name: Publish v0.2.14 release if missing
+          name: MiraFactions-0.2.15
+          path: build/libs/MiraFactions-0.2.15.jar
+      - name: Publish v0.2.15 release if missing
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view v0.2.14 >/dev/null 2>&1; then
-            gh release create v0.2.14 \
-              build/libs/MiraFactions-0.2.14.jar \
+          if ! gh release view v0.2.15 >/dev/null 2>&1; then
+            gh release create v0.2.15 \
+              build/libs/MiraFactions-0.2.15.jar \
               --target "${{ github.sha }}" \
-              --title "MiraFactions v0.2.14" \
-              --notes "Integrates approved faction visuals with MiraCosmetics for claim, unclaim, SafeZone/WarZone entry, faction creation, upgrades and disband while keeping MiraCosmetics optional and authoritative for particles."
+              --title "MiraFactions v0.2.15" \
+              --notes "Adds the planned faction permission GUI, faction shield control GUI, Home Warmup and Warp Warmup functional upgrades, clearer upgrade categories/effects, permission reset support and raidability-safe shield activation."
           fi
