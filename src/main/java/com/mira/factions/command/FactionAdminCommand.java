@@ -71,9 +71,18 @@ public final class FactionAdminCommand implements TabExecutor {
             case "shield" -> shield(sender, args);
             case "upgrade", "upgrades" -> upgrade(sender, args);
             case "info" -> info(sender, args);
+            case "top" -> top(sender, args);
             default -> help(sender, 1);
         }
         return true;
+    }
+
+    private void top(CommandSender sender, String[] args) {
+        if (args.length < 2 || !args[1].equalsIgnoreCase("update")) {
+            plugin.msg(sender, "&cUsage: /fa top update");
+            return;
+        }
+        plugin.landValue().startFullRebuild(sender);
     }
 
     private void toggleBypass(CommandSender sender) {
@@ -511,6 +520,7 @@ public final class FactionAdminCommand implements TabExecutor {
             plugin.msg(sender, "&d/fa grace <status|start <minutes>|stop>");
             plugin.msg(sender, "&d/fa peaceful <faction> &7| permanent <faction> &7| rentexempt <faction>");
             plugin.msg(sender, "&d/fa shield <clear|reset> <faction>");
+            plugin.msg(sender, "&d/fa top update");
         }
     }
 
@@ -518,7 +528,7 @@ public final class FactionAdminCommand implements TabExecutor {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (!sender.hasPermission("mirafactions.admin")) return List.of();
         String current = args.length == 0 ? "" : args[args.length - 1].toLowerCase(Locale.ROOT);
-        if (args.length == 1) return filter(List.of("help","reload","save","bypass","chatspy","info","power","powerboost","permanentpower","disband","forcejoin","forcekick","forcerole","forcehome","rename","claim","grace","peaceful","permanent","rentexempt","money","tnt","shield","upgrade"), current);
+        if (args.length == 1) return filter(List.of("help","reload","save","bypass","chatspy","info","top","power","powerboost","permanentpower","disband","forcejoin","forcekick","forcerole","forcehome","rename","claim","grace","peaceful","permanent","rentexempt","money","tnt","shield","upgrade"), current);
 
         String root = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 2) {
@@ -529,6 +539,7 @@ public final class FactionAdminCommand implements TabExecutor {
             if (root.equals("claim")) return filter(List.of("safezone","warzone","wilderness"), current);
             if (root.equals("grace")) return filter(List.of("status","start","stop"), current);
             if (root.equals("shield")) return filter(List.of("clear","reset"), current);
+            if (root.equals("top")) return filter(List.of("update"), current);
         }
         if (args.length == 3) {
             if (root.equals("forcejoin") || root.equals("forcehome")) return factions(current);
