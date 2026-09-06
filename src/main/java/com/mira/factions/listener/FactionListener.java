@@ -286,6 +286,12 @@ public final class FactionListener implements Listener {
 
     private void updateTerritory(Player player, Location location) {
         TerritoryType type = service.territoryType(location);
+        if (type == TerritoryType.SAFEZONE || type == TerritoryType.WARZONE) {
+            player.setPlayerWeather(WeatherType.CLEAR);
+        } else {
+            player.resetPlayerWeather();
+        }
+
         Faction owner = service.owner(location);
         String now = switch (type) {
             case SAFEZONE -> "SAFEZONE";
