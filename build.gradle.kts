@@ -4,7 +4,7 @@ import java.security.MessageDigest
 plugins { java }
 
 group = "com.mira"
-version = "0.2.21"
+version = "0.2.22"
 
 repositories {
     mavenCentral()
@@ -17,6 +17,10 @@ repositories {
 val miraShopVersion = "0.1.12"
 val miraShopSha256 = "a2b2299c5282b64f32c72df1f721cd90234b0171650c9ea475f242f3046453a3"
 val miraShopJar = layout.projectDirectory.file("libs/MiraShop-$miraShopVersion.jar").asFile
+
+val miraSpawnersVersion = "0.1.11"
+val miraSpawnersSha256 = "ed7258b1838fa1bdfdc70131780feaf6c1406734278dfb81fa37a3e21cdfa0bb"
+val miraSpawnersJar = layout.projectDirectory.file("libs/MiraSpawners-$miraSpawnersVersion.jar").asFile
 
 fun sha256(file: File): String {
     val digest = MessageDigest.getInstance("SHA-256")
@@ -44,17 +48,28 @@ val downloadMiraShopApi by tasks.registering {
     }
 }
 
+val downloadMiraSpawnersApi by tasks.registering {
+    doLast {
+        downloadVerified(
+            "https://github.com/FiveSOCE/Mira-Spawners/releases/download/v$miraSpawnersVersion/MiraSpawners-$miraSpawnersVersion.jar",
+            miraSpawnersJar,
+            miraSpawnersSha256
+        )
+    }
+}
+
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
     compileOnly("me.clip:placeholderapi:2.11.6")
     compileOnly(files(miraShopJar))
+    compileOnly(files(miraSpawnersJar))
 }
 
 java { toolchain.languageVersion.set(JavaLanguageVersion.of(21)) }
 
 tasks.withType<JavaCompile>().configureEach {
-    dependsOn(downloadMiraShopApi)
+    dependsOn(downloadMiraShopApi, downloadMiraSpawnersApi)
     options.encoding = "UTF-8"
     options.release.set(21)
 }
