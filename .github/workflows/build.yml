@@ -54,5 +54,5 @@ jobs:
             gh release create "$TAG" "$JAR" \
               --target "${{ github.sha }}" \
               --title "MiraFactions $TAG" \
-              --notes "Adds collector-safe MiraFactions API operations for own-claim validation and atomic faction-bank withdrawals. Existing faction gameplay behavior is unchanged."
+              --notes "Fixes FTop land-value updates for spawners. MiraFactions now consumes MiraSpawners stack-change events for immediate claim-cache updates, refreshes current MiraShop spawner prices before manual /fa top update rebuilds, and verifies claim ownership during full scans before committing rebuilt land values."
           fi
