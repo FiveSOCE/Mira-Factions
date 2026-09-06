@@ -38,7 +38,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
 
         FactionHistoryListener historyListener = new FactionHistoryListener(this, factions, history, landValue);
         FactionSeasonListener seasonListener = new FactionSeasonListener(this, factions, landValue, seasons);
-        getServer().getPluginManager().registerEvents(landValue, this);
+        installMiraShopPriceBridge();
         getServer().getPluginManager().registerEvents(new FactionHistoryAliasListener(), this);
         getServer().getPluginManager().registerEvents(historyListener, this);
         getServer().getPluginManager().registerEvents(new FactionHistoryTabListener(), this);
@@ -98,6 +98,21 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, landValue::flushIfDirty, 20L * 60L, 20L * 60L);
 
         getLogger().info("MiraFactions v" + getPluginMeta().getVersion() + " enabled with " + factions.all().size() + " faction(s). Season: " + seasons.currentSeason());
+    }
+
+    private void installMiraShopPriceBridge() {
+        if (!getServer().getPluginManager().isPluginEnabled("MiraShop")) return;
+        try {
+            Class<?> bridgeType = Class.forName("com.mira.factions.hook.MiraShopPriceBridge");
+            var constructor = bridgeType.getConstructor(MiraFactionsPlugin.class, FactionLandValueService.class);
+            Object bridge = constructor.newInstance(this, landValue);
+            if (bridge instanceof org.bukkit.event.Listener listener) {
+                getServer().getPluginManager().registerEvents(listener, this);
+                getLogger().info("MiraShop cached spawner price bridge enabled.");
+            }
+        } catch (Throwable throwable) {
+            getLogger().warning("MiraShop price integration unavailable: " + throwable.getMessage());
+        }
     }
 
     @Override
