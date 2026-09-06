@@ -1,10 +1,14 @@
+## v0.2.20 protected-zone clear weather
+
+Players inside SafeZone or WarZone now receive a persistent clear-weather override. Leaving those territories restores normal world weather. The 0.2.19 WarZone falling-block gravity fix remains included.
+
 # MiraFactions
 
 MiraFactions is the power, territory, raiding and faction-management system for the Mira Paper server suite. It follows the classic FactionsUUID-style gameplay loop while adding faction ranks, granular permissions, diplomacy, economy, TNT, upgrades, zones, seasonal FTop data, protected SafeZone/WarZone territory and integrations with the wider Mira ecosystem.
 
 ## Download
 
-[**Download MiraFactions v0.2.19**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.19/MiraFactions-0.2.19.jar)
+[**Download MiraFactions v0.2.20**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.20/MiraFactions-0.2.20.jar)
 
 ## Requirements / Dependencies
 
@@ -134,11 +138,11 @@ MiraFactions keeps bank/value history and exact raid-value gain/loss records. Se
 
 MiraFactions owns faction-flight **entitlement**, while MiraFly owns the live Bukkit flight state. `/f fly` checks faction membership, the faction FLIGHT upgrade, the player's internal faction `FLY` permission and MiraFly availability. MiraFly then controls whether flight can remain active in the player's current territory. This prevents the two plugins from competing over `allowFlight`.
 
-MiraFactions v0.2.19 also makes territory/claim-key lookups coordinate-only, so checking a claim or WarZone no longer calls `Location#getChunk()` and cannot synchronously generate terrain.
+MiraFactions v0.2.20 also makes territory/claim-key lookups coordinate-only, so checking a claim or WarZone no longer calls `Location#getChunk()` and cannot synchronously generate terrain.
 
 ## WarZone falling-block gravity fix
 
-MiraFactions v0.2.19 allows natural `FallingBlock` entity changes in WarZone. This restores vanilla sand, gravel and concrete-powder gravity while keeping SafeZone fully protected and preserving other WarZone terrain protections.
+MiraFactions v0.2.20 allows natural `FallingBlock` entity changes in WarZone. This restores vanilla sand, gravel and concrete-powder gravity while keeping SafeZone fully protected and preserving other WarZone terrain protections.
 
 ## Always-loaded SafeZone and WarZone chunks
 
@@ -298,7 +302,7 @@ Integrates approved faction visuals with MiraCosmetics for claim, unclaim, SafeZ
 
 ## Faction Control GUIs and Warmup Upgrades (0.2.15)
 
-v0.2.19 adds GUI-first control for faction permissions and shields while keeping the existing faction data model as the single authority.
+v0.2.20 adds GUI-first control for faction permissions and shields while keeping the existing faction data model as the single authority.
 
 - `/f permissions` opens a rank-first permission editor backed by the faction's existing minimum-rank permission thresholds.
 - permission reset restores the normal MiraFactions defaults rather than creating a second permissions store.
