@@ -54,5 +54,5 @@ jobs:
             gh release create "$TAG" "$JAR" \
               --target "${{ github.sha }}" \
               --title "MiraFactions $TAG" \
-              --notes "Fixes faction territory and WarZone coordinate lookups so claim-key checks no longer call Location#getChunk or synchronously load/generate chunks. Includes the 0.2.16 cached FTop architecture."
+              --notes "Keeps every SafeZone and WarZone chunk loaded 24/7 using MiraFactions-owned plugin chunk tickets. Existing special zones are restored asynchronously on startup, special-claim changes update tickets immediately, and only MiraFactions tickets are removed on shutdown. Includes the chunk-safe territory lookups from 0.2.17."
           fi
