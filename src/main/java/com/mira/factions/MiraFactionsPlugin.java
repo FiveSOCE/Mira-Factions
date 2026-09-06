@@ -38,6 +38,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
 
         FactionHistoryListener historyListener = new FactionHistoryListener(this, factions, history, landValue);
         FactionSeasonListener seasonListener = new FactionSeasonListener(this, factions, landValue, seasons);
+        getServer().getPluginManager().registerEvents(landValue, this);
         getServer().getPluginManager().registerEvents(new FactionHistoryAliasListener(), this);
         getServer().getPluginManager().registerEvents(historyListener, this);
         getServer().getPluginManager().registerEvents(new FactionHistoryTabListener(), this);
@@ -90,11 +91,18 @@ public final class MiraFactionsPlugin extends JavaPlugin {
             for (Player player : Bukkit.getOnlinePlayers()) factions.renderSeeChunk(player);
         }, 10L, 10L);
 
+        long passiveFtopTicks = Math.max(1L, getConfig().getLong("ftop.passive-check-seconds", 10L)) * 20L;
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            for (Player player : Bukkit.getOnlinePlayers()) landValue.refreshLoadedAround(player);
+        }, passiveFtopTicks, passiveFtopTicks);
+        Bukkit.getScheduler().runTaskTimer(this, landValue::flushIfDirty, 20L * 60L, 20L * 60L);
+
         getLogger().info("MiraFactions v" + getPluginMeta().getVersion() + " enabled with " + factions.all().size() + " faction(s). Season: " + seasons.currentSeason());
     }
 
     @Override
     public void onDisable() {
+        if (landValue != null) landValue.shutdown();
         if (factions != null) factions.save();
         getServer().getServicesManager().unregisterAll(this);
     }
