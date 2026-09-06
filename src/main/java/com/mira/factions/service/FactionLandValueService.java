@@ -127,16 +127,16 @@ public final class FactionLandValueService {
             }
         }
 
-        chunkCache.clear();
-        dirty = true;
-
         if (claims.isEmpty()) {
+            chunkCache.clear();
+            dirty = true;
             saveCache();
             if (sender != null) plugin.msg(sender, "&aFTop cache updated. There are no faction claims to scan.");
             return true;
         }
 
         final Iterator<Claim> iterator = claims.iterator();
+        final Map<String, ChunkSnapshot> rebuilt = new HashMap<>();
         final int total = claims.size();
         final int[] processed = {0};
         final int batch = Math.max(1, Math.min(50, plugin.getConfig().getInt("ftop.manual-chunks-per-tick", 8)));
@@ -157,14 +157,16 @@ public final class FactionLandValueService {
                 if (owner == null) continue;
 
                 Chunk chunk = world.getChunkAt(claim.x(), claim.z());
-                chunkCache.put(claim.key(), new ChunkSnapshot(scanChunk(chunk)));
-                dirty = true;
+                rebuilt.put(claim.key(), new ChunkSnapshot(scanChunk(chunk)));
             }
 
             if (!iterator.hasNext()) {
                 BukkitTask done = rebuildTask;
                 rebuildTask = null;
                 if (done != null) done.cancel();
+                chunkCache.clear();
+                chunkCache.putAll(rebuilt);
+                dirty = true;
                 saveCache();
                 if (sender != null) {
                     plugin.msg(sender, "&aFTop full update complete. Scanned &f" + processed[0] + "&a claimed chunk(s).");
