@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
@@ -244,7 +245,22 @@ public final class ProtectedZoneListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
-        if (protectedZone(event.getBlock().getLocation())) event.setCancelled(true);
+        TerritoryType type = service.territoryType(event.getBlock().getLocation());
+
+        // SafeZone remains fully protected. WarZone must allow natural falling-block
+        // physics so sand/gravel/concrete powder can fall and settle normally.
+        if (type == TerritoryType.SAFEZONE) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (type == TerritoryType.WARZONE && event.getEntity() instanceof FallingBlock) {
+            return;
+        }
+
+        if (type == TerritoryType.WARZONE) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
