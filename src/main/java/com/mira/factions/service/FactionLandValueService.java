@@ -2,8 +2,6 @@ package com.mira.factions.service;
 
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.Faction;
-import com.mira.shop.api.SpawnerPriceCacheEvent;
-import com.mira.shop.api.SpawnerPriceService;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -16,8 +14,6 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -26,7 +22,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public final class FactionLandValueService implements Listener {
+public final class FactionLandValueService {
     private static final NamespacedKey STACK_SIZE = NamespacedKey.fromString("miraspawners:spawner_stack_size");
 
     private final MiraFactionsPlugin plugin;
@@ -42,7 +38,6 @@ public final class FactionLandValueService implements Listener {
         this.cacheFile = new File(plugin.getDataFolder(), "ftop-cache.yml");
         loadCache();
         loadEssentialsFallback();
-        hookSpawnerPriceService();
     }
 
     public double value(Faction faction) {
@@ -196,23 +191,19 @@ public final class FactionLandValueService implements Listener {
         saveCache();
     }
 
-    public void hookSpawnerPriceService() {
-        try {
-            SpawnerPriceService service = Bukkit.getServicesManager().load(SpawnerPriceService.class);
-            if (service != null) {
-                spawnerPrices = Map.copyOf(service.buyPrices());
-                plugin.getLogger().info("Loaded " + spawnerPrices.size() + " typed spawner price(s) from MiraShop service.");
-            } else {
-                spawnerPrices = Map.of();
-            }
-        } catch (NoClassDefFoundError ignored) {
+    public void updateSpawnerPrices(Map<EntityType, Double> prices) {
+        if (prices == null || prices.isEmpty()) {
             spawnerPrices = Map.of();
+            return;
         }
-    }
-
-    @EventHandler
-    public void onSpawnerPriceCache(SpawnerPriceCacheEvent event) {
-        spawnerPrices = Map.copyOf(event.prices());
+        EnumMap<EntityType, Double> copy = new EnumMap<>(EntityType.class);
+        for (Map.Entry<EntityType, Double> entry : prices.entrySet()) {
+            if (entry.getKey() != null && entry.getValue() != null
+                    && Double.isFinite(entry.getValue()) && entry.getValue() >= 0D) {
+                copy.put(entry.getKey(), entry.getValue());
+            }
+        }
+        spawnerPrices = Map.copyOf(copy);
         plugin.getLogger().info("Refreshed cached MiraShop spawner prices: " + spawnerPrices.size() + " type(s).");
     }
 
