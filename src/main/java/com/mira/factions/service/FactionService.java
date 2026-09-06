@@ -25,6 +25,7 @@ public final class FactionService {
     private final Map<String, UUID> claimOwner = new HashMap<>();
     private final Set<String> safeZoneClaims = new HashSet<>();
     private final Set<String> warZoneClaims = new HashSet<>();
+    private final Set<String> specialZoneChunkTickets = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Double> power = new ConcurrentHashMap<>();
     private final Map<UUID, ChatMode> chatModes = new ConcurrentHashMap<>();
     private final Set<UUID> autoClaim = ConcurrentHashMap.newKeySet();
@@ -41,6 +42,7 @@ public final class FactionService {
         this.economy = economy;
         this.file = new File(plugin.getDataFolder(), "factions.yml");
         load();
+        syncSpecialZoneChunkTickets();
     }
 
     public Collection<Faction> all() { return Collections.unmodifiableCollection(factions.values()); }
@@ -463,10 +465,15 @@ public final class FactionService {
                 faction.claimZones().remove(key);
             }
         }
-        safeZoneClaims.remove(key);
-        warZoneClaims.remove(key);
+
+        boolean wasSpecial = safeZoneClaims.remove(key) | warZoneClaims.remove(key);
         if (type == TerritoryType.SAFEZONE) safeZoneClaims.add(key);
         if (type == TerritoryType.WARZONE) warZoneClaims.add(key);
+
+        boolean isSpecial = type == TerritoryType.SAFEZONE || type == TerritoryType.WARZONE;
+        if (isSpecial) ensureSpecialZoneChunkTicket(key);
+        else if (wasSpecial) releaseSpecialZoneChunkTicket(key);
+
         save();
         return Result.ok("Set chunk to " + type + ".");
     }
@@ -1176,6 +1183,70 @@ public final class FactionService {
         return (hours > 0 ? hours + "h " : "") + (minutes > 0 ? minutes + "m " : "") + secs + "s";
     }
 
+    public void syncSpecialZoneChunkTickets() {
+        Set<String> desired = new HashSet<>(safeZoneClaims);
+        desired.addAll(warZoneClaims);
+
+        for (String key : desired) ensureSpecialZoneChunkTicket(key);
+        for (String key : new HashSet<>(specialZoneChunkTickets)) {
+            if (!desired.contains(key)) releaseSpecialZoneChunkTicket(key);
+        }
+    }
+
+    public void releaseAllSpecialZoneChunkTickets() {
+        for (String key : new HashSet<>(specialZoneChunkTickets)) {
+            releaseSpecialZoneChunkTicket(key);
+        }
+    }
+
+    private void ensureSpecialZoneChunkTicket(String key) {
+        if (key == null || key.isBlank() || specialZoneChunkTickets.contains(key)) return;
+        ClaimCoordinate claim = parseClaimCoordinate(key);
+        if (claim == null) return;
+
+        World world = Bukkit.getWorld(claim.worldId());
+        if (world == null) {
+            plugin.getLogger().warning("Could not keep special-zone chunk loaded because world is unavailable: " + key);
+            return;
+        }
+
+        // Avoid synchronous chunk generation. Paper loads/generates the chunk asynchronously,
+        // then the MiraFactions plugin ticket is attached on the server thread.
+        world.getChunkAtAsync(claim.chunkX(), claim.chunkZ(), true).thenAccept(chunk ->
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (!safeZoneClaims.contains(key) && !warZoneClaims.contains(key)) return;
+                    chunk.addPluginChunkTicket(plugin);
+                    specialZoneChunkTickets.add(key);
+                })
+        ).exceptionally(throwable -> {
+            plugin.getLogger().warning("Could not load special-zone chunk " + key + ": " + throwable.getMessage());
+            return null;
+        });
+    }
+
+    private void releaseSpecialZoneChunkTicket(String key) {
+        if (key == null || key.isBlank()) return;
+        ClaimCoordinate claim = parseClaimCoordinate(key);
+        specialZoneChunkTickets.remove(key);
+        if (claim == null) return;
+
+        World world = Bukkit.getWorld(claim.worldId());
+        if (world == null || !world.isChunkLoaded(claim.chunkX(), claim.chunkZ())) return;
+        Chunk chunk = world.getChunkAt(claim.chunkX(), claim.chunkZ());
+        chunk.removePluginChunkTicket(plugin);
+    }
+
+    private ClaimCoordinate parseClaimCoordinate(String key) {
+        if (key == null) return null;
+        String[] parts = key.split(":");
+        if (parts.length != 3) return null;
+        try {
+            return new ClaimCoordinate(UUID.fromString(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
     public void save() {
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("meta.graceUntil", graceUntil);
@@ -1334,6 +1405,8 @@ public final class FactionService {
 
     private String encodeClaimKey(String key) { return Base64.getUrlEncoder().withoutPadding().encodeToString(key.getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
     private String decodeClaimKey(String key) { return new String(Base64.getUrlDecoder().decode(key), java.nio.charset.StandardCharsets.UTF_8); }
+
+    private record ClaimCoordinate(UUID worldId, int chunkX, int chunkZ) { }
 
     public record Result(boolean success, String message) {
         public static Result ok(String message) { return new Result(true, message); }
