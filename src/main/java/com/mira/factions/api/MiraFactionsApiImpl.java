@@ -45,6 +45,29 @@ public final class MiraFactionsApiImpl implements MiraFactionsApi {
     @Override public boolean canBuild(Player player, Location location) { return service.can(player, location, FactionPermission.BUILD); }
 
     @Override
+    public boolean isOwnClaim(Player player, Location location) {
+        if (player == null || location == null) return false;
+        Faction faction = service.of(player.getUniqueId());
+        return faction != null && service.owner(location) == faction;
+    }
+
+    @Override
+    public double factionBankBalance(UUID player) {
+        Faction faction = service.of(player);
+        return faction == null ? 0.0 : faction.bankBalance();
+    }
+
+    @Override
+    public boolean withdrawFactionBank(UUID player, double amount) {
+        if (player == null || !Double.isFinite(amount) || amount < 0.0) return false;
+        Faction faction = service.of(player);
+        if (faction == null || faction.bankBalance() + 1.0E-9 < amount) return false;
+        faction.bankBalance(faction.bankBalance() - amount);
+        service.save();
+        return true;
+    }
+
+    @Override
     public boolean hasFactionFlightEntitlement(Player player) {
         if (player == null) return false;
         Faction faction = service.of(player.getUniqueId());
