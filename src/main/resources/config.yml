@@ -78,6 +78,15 @@ members:
 chat:
   public-faction-tag: true
 
+ftop:
+  # Passive updates never load chunks. A player must be standing in their own faction claim,
+  # and only already-loaded nearby chunks owned by that same faction are refreshed.
+  passive-check-seconds: 10
+  passive-radius-chunks: 5
+
+  # /fa top update is the only path that deliberately loads all faction claims.
+  manual-chunks-per-tick: 8
+
 history:
   value-snapshot-minutes: 10
   audit-max-entries: 1000
