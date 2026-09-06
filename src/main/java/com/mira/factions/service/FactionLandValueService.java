@@ -2,6 +2,7 @@ package com.mira.factions.service;
 
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.Faction;
+import com.mira.shop.api.SpawnerPriceService;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -114,6 +115,8 @@ public final class FactionLandValueService {
      * loads every claimed chunk. Work is batched over ticks to avoid one giant freeze.
      */
     public boolean startFullRebuild(CommandSender sender) {
+        refreshSpawnerPricesFromService();
+
         if (rebuildTask != null) {
             if (sender != null) plugin.msg(sender, "&cAn FTop full update is already running.");
             return false;
@@ -175,6 +178,31 @@ public final class FactionLandValueService {
         }, 1L, 1L);
 
         return true;
+    }
+
+    public void applySpawnerChange(Location location, EntityType type, int oldAmount, int newAmount) {
+        if (location == null || location.getWorld() == null || type == null) return;
+
+        Faction owner = plugin.factions().owner(location);
+        if (owner == null) return;
+
+        String claim = plugin.factions().claimKey(location);
+        ChunkSnapshot current = chunkCache.get(claim);
+        EnumMap<EntityType, Integer> counts = new EnumMap<>(EntityType.class);
+        if (current != null) counts.putAll(current.counts());
+
+        int existing = counts.getOrDefault(type, 0);
+        int next = Math.max(0, existing + Math.max(0, newAmount) - Math.max(0, oldAmount));
+        if (next <= 0) counts.remove(type);
+        else counts.put(type, next);
+
+        chunkCache.put(claim, new ChunkSnapshot(counts));
+        dirty = true;
+    }
+
+    public void refreshSpawnerPricesFromService() {
+        SpawnerPriceService service = Bukkit.getServicesManager().load(SpawnerPriceService.class);
+        if (service != null) updateSpawnerPrices(service.buyPrices());
     }
 
     public boolean rebuildRunning() {
