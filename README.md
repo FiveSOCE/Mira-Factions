@@ -4,7 +4,7 @@ MiraFactions is the power, territory, raiding and faction-management system for 
 
 ## Download
 
-[**Download MiraFactions v0.2.16**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.16/MiraFactions-0.2.16.jar)
+[**Download MiraFactions v0.2.17**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.17/MiraFactions-0.2.17.jar)
 
 ## Requirements / Dependencies
 
@@ -133,6 +133,8 @@ MiraFactions keeps bank/value history and exact raid-value gain/loss records. Se
 ### Faction flight
 
 MiraFactions owns faction-flight **entitlement**, while MiraFly owns the live Bukkit flight state. `/f fly` checks faction membership, the faction FLIGHT upgrade, the player's internal faction `FLY` permission and MiraFly availability. MiraFly then controls whether flight can remain active in the player's current territory. This prevents the two plugins from competing over `allowFlight`.
+
+MiraFactions v0.2.17 also makes territory/claim-key lookups coordinate-only, so checking a claim or WarZone no longer calls `Location#getChunk()` and cannot synchronously generate terrain.
 
 ## FTop cache behavior
 
@@ -282,7 +284,7 @@ Integrates approved faction visuals with MiraCosmetics for claim, unclaim, SafeZ
 
 ## Faction Control GUIs and Warmup Upgrades (0.2.15)
 
-v0.2.16 adds GUI-first control for faction permissions and shields while keeping the existing faction data model as the single authority.
+v0.2.17 adds GUI-first control for faction permissions and shields while keeping the existing faction data model as the single authority.
 
 - `/f permissions` opens a rank-first permission editor backed by the faction's existing minimum-rank permission thresholds.
 - permission reset restores the normal MiraFactions defaults rather than creating a second permissions store.
