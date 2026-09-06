@@ -118,7 +118,10 @@ public final class MiraFactionsPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         if (landValue != null) landValue.shutdown();
-        if (factions != null) factions.save();
+        if (factions != null) {
+            factions.releaseAllSpecialZoneChunkTickets();
+            factions.save();
+        }
         getServer().getServicesManager().unregisterAll(this);
     }
 
