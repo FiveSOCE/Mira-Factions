@@ -5,6 +5,7 @@ import com.mira.factions.command.*;
 import com.mira.factions.gui.FTopPodiumService;
 import com.mira.factions.gui.FactionGuiService;
 import com.mira.factions.hook.MiraFactionsPlaceholderExpansion;
+import com.mira.factions.hook.MiraSpawnersValueBridge;
 import com.mira.factions.listener.*;
 import com.mira.factions.service.*;
 import net.kyori.adventure.text.Component;
@@ -39,6 +40,10 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         FactionHistoryListener historyListener = new FactionHistoryListener(this, factions, history, landValue);
         FactionSeasonListener seasonListener = new FactionSeasonListener(this, factions, landValue, seasons);
         installMiraShopPriceBridge();
+        if (getServer().getPluginManager().isPluginEnabled("MiraSpawners")) {
+            getServer().getPluginManager().registerEvents(new MiraSpawnersValueBridge(landValue), this);
+            getLogger().info("MiraSpawners FTop land-value bridge enabled.");
+        }
         getServer().getPluginManager().registerEvents(new FactionHistoryAliasListener(), this);
         getServer().getPluginManager().registerEvents(historyListener, this);
         getServer().getPluginManager().registerEvents(new FactionHistoryTabListener(), this);
