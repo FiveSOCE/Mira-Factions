@@ -54,5 +54,5 @@ jobs:
             gh release create "$TAG" "$JAR" \
               --target "${{ github.sha }}" \
               --title "MiraFactions $TAG" \
-              --notes "Keeps weather visually clear for players while they are inside SafeZone or WarZone using a per-player clear-weather override, then restores normal world weather when they leave. Includes the WarZone falling-block gravity fix from 0.2.19 and always-loaded special-zone chunks from 0.2.18."
+              --notes "Adds collector-safe MiraFactions API operations for own-claim validation and atomic faction-bank withdrawals. Existing faction gameplay behavior is unchanged."
           fi
