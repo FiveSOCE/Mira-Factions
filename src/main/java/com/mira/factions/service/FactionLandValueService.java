@@ -125,7 +125,7 @@ public final class FactionLandValueService {
         List<Claim> claims = new ArrayList<>();
         for (Faction faction : plugin.factions().all()) {
             for (String key : faction.claims()) {
-                Claim claim = parse(key);
+                Claim claim = parse(key, faction.id());
                 if (claim != null) claims.add(claim);
             }
         }
@@ -157,7 +157,7 @@ public final class FactionLandValueService {
 
                 Location probe = new Location(world, (claim.x() << 4) + 8, world.getMinHeight(), (claim.z() << 4) + 8);
                 Faction owner = plugin.factions().owner(probe);
-                if (owner == null) continue;
+                if (owner == null || !owner.id().equals(claim.factionId())) continue;
 
                 Chunk chunk = world.getChunkAt(claim.x(), claim.z());
                 rebuilt.put(claim.key(), new ChunkSnapshot(scanChunk(chunk)));
@@ -343,15 +343,15 @@ public final class FactionLandValueService {
         return world.getUID() + ":" + x + ":" + z;
     }
 
-    private Claim parse(String key) {
-        if (key == null) return null;
+    private Claim parse(String key, UUID factionId) {
+        if (key == null || factionId == null) return null;
         String[] parts = key.split(":");
         if (parts.length != 3) return null;
         try {
             UUID world = UUID.fromString(parts[0]);
             int x = Integer.parseInt(parts[1]);
             int z = Integer.parseInt(parts[2]);
-            return new Claim(world, x, z, key);
+            return new Claim(world, x, z, key, factionId);
         } catch (Exception ignored) {
             return null;
         }
@@ -373,5 +373,5 @@ public final class FactionLandValueService {
         }
     }
 
-    private record Claim(UUID world, int x, int z, String key) { }
+    private record Claim(UUID world, int x, int z, String key, UUID factionId) { }
 }
