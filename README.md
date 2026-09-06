@@ -4,7 +4,7 @@ MiraFactions is the power, territory, raiding and faction-management system for 
 
 ## Download
 
-[**Download MiraFactions v0.2.18**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.18/MiraFactions-0.2.18.jar)
+[**Download MiraFactions v0.2.19**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.19/MiraFactions-0.2.19.jar)
 
 ## Requirements / Dependencies
 
@@ -134,7 +134,11 @@ MiraFactions keeps bank/value history and exact raid-value gain/loss records. Se
 
 MiraFactions owns faction-flight **entitlement**, while MiraFly owns the live Bukkit flight state. `/f fly` checks faction membership, the faction FLIGHT upgrade, the player's internal faction `FLY` permission and MiraFly availability. MiraFly then controls whether flight can remain active in the player's current territory. This prevents the two plugins from competing over `allowFlight`.
 
-MiraFactions v0.2.18 also makes territory/claim-key lookups coordinate-only, so checking a claim or WarZone no longer calls `Location#getChunk()` and cannot synchronously generate terrain.
+MiraFactions v0.2.19 also makes territory/claim-key lookups coordinate-only, so checking a claim or WarZone no longer calls `Location#getChunk()` and cannot synchronously generate terrain.
+
+## WarZone falling-block gravity fix
+
+MiraFactions v0.2.19 allows natural `FallingBlock` entity changes in WarZone. This restores vanilla sand, gravel and concrete-powder gravity while keeping SafeZone fully protected and preserving other WarZone terrain protections.
 
 ## Always-loaded SafeZone and WarZone chunks
 
@@ -294,7 +298,7 @@ Integrates approved faction visuals with MiraCosmetics for claim, unclaim, SafeZ
 
 ## Faction Control GUIs and Warmup Upgrades (0.2.15)
 
-v0.2.18 adds GUI-first control for faction permissions and shields while keeping the existing faction data model as the single authority.
+v0.2.19 adds GUI-first control for faction permissions and shields while keeping the existing faction data model as the single authority.
 
 - `/f permissions` opens a rank-first permission editor backed by the faction's existing minimum-rank permission thresholds.
 - permission reset restores the normal MiraFactions defaults rather than creating a second permissions store.
