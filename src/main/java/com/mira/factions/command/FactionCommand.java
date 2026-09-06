@@ -333,14 +333,26 @@ public final class FactionCommand implements TabExecutor {
     }
 
     private boolean top(Player player) {
-        List<Faction> sorted = service.all().stream().sorted(Comparator.comparingDouble(service::factionPower).reversed()).limit(10).toList();
+        List<Faction> sorted = service.all().stream()
+                .sorted(Comparator.comparingDouble((Faction faction) -> plugin.landValue().value(faction) + faction.bankBalance())
+                        .reversed()
+                        .thenComparing(Faction::name, String.CASE_INSENSITIVE_ORDER))
+                .limit(10)
+                .toList();
         plugin.msg(player, "&5&m----&d Faction Top &5&m----");
         int place = 1;
-        for (Faction faction : sorted) plugin.msg(player, "&d#" + place++ + " &f" + faction.name() + " &7Power: &f" + String.format(Locale.US, "%.1f", service.factionPower(faction)) + " &7Claims: &f" + faction.claims().size());
+        for (Faction faction : sorted) {
+            double land = plugin.landValue().value(faction);
+            double total = land + faction.bankBalance();
+            plugin.msg(player, "&d#" + place++ + " &f" + faction.name()
+                    + " &7Value: &a$" + String.format(Locale.US, "%,.2f", total)
+                    + " &7Land: &f$" + String.format(Locale.US, "%,.2f", land)
+                    + " &7Bank: &f$" + String.format(Locale.US, "%,.2f", faction.bankBalance()));
+        }
         return true;
     }
 
-    private boolean respond(Player player, FactionService.Result result) {
+        private boolean respond(Player player, FactionService.Result result) {
         if (!result.message().isBlank()) plugin.msg(player, (result.success() ? "&a" : "&c") + result.message());
         return true;
     }
