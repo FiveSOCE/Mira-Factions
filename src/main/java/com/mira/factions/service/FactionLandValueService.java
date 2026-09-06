@@ -2,72 +2,229 @@ package com.mira.factions.service;
 
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.Faction;
+import com.mira.shop.api.SpawnerPriceCacheEvent;
+import com.mira.shop.api.SpawnerPriceService;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.CreatureSpawner;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public final class FactionLandValueService {
+public final class FactionLandValueService implements Listener {
     private static final NamespacedKey STACK_SIZE = NamespacedKey.fromString("miraspawners:spawner_stack_size");
 
     private final MiraFactionsPlugin plugin;
-    private final Map<EntityType, Double> spawnerPrices = new EnumMap<>(EntityType.class);
-    private long lastPriceRefresh;
+    private final File cacheFile;
+    private final Map<String, ChunkSnapshot> chunkCache = new HashMap<>();
+    private volatile Map<EntityType, Double> spawnerPrices = Map.of();
     private double essentialsGenericSpawnerValue = -1D;
+    private boolean dirty;
+    private BukkitTask rebuildTask;
 
     public FactionLandValueService(MiraFactionsPlugin plugin) {
         this.plugin = plugin;
+        this.cacheFile = new File(plugin.getDataFolder(), "ftop-cache.yml");
+        loadCache();
+        loadEssentialsFallback();
+        hookSpawnerPriceService();
     }
 
-    public double value(Faction faction) { return breakdown(faction).spawnerValue(); }
+    public double value(Faction faction) {
+        return breakdown(faction).spawnerValue();
+    }
 
     public Breakdown breakdown(Faction faction) {
         if (faction == null) return new Breakdown(0D, Map.of());
-        refreshPrices();
-        double total = 0D;
-        Map<EntityType, Integer> counts = new EnumMap<>(EntityType.class);
+
+        EnumMap<EntityType, Integer> counts = new EnumMap<>(EntityType.class);
         for (String claim : faction.claims()) {
-            Claim parsed = parse(claim);
-            if (parsed == null) continue;
-            World world = Bukkit.getWorld(parsed.world());
-            if (world == null) continue;
-            ChunkBreakdown chunk = breakdown(world.getChunkAt(parsed.x(), parsed.z()));
-            total += chunk.spawnerValue();
-            for (Map.Entry<EntityType, Integer> entry : chunk.spawnerCounts().entrySet()) counts.merge(entry.getKey(), entry.getValue(), Integer::sum);
+            ChunkSnapshot snapshot = chunkCache.get(claim);
+            if (snapshot == null) continue;
+            snapshot.counts().forEach((type, amount) -> counts.merge(type, amount, Integer::sum));
         }
-        return new Breakdown(total, Collections.unmodifiableMap(new EnumMap<>(counts)));
+        return new Breakdown(price(counts), Collections.unmodifiableMap(counts));
     }
 
+    /**
+     * Calculates a chunk that is already available to the caller. This method never loads
+     * another chunk and does not alter the FTop cache by itself.
+     */
     public ChunkBreakdown breakdown(Chunk chunk) {
-        if (chunk == null) return new ChunkBreakdown(0D, Map.of());
-        refreshPrices();
-        double total = 0D;
-        Map<EntityType, Integer> counts = new EnumMap<>(EntityType.class);
+        if (chunk == null || !chunk.isLoaded()) return new ChunkBreakdown(0D, Map.of());
+        EnumMap<EntityType, Integer> counts = scanChunk(chunk);
+        return new ChunkBreakdown(price(counts), Collections.unmodifiableMap(counts));
+    }
+
+    public double unitPrice(EntityType type) {
+        if (type == null) return -1D;
+        return spawnerPrices.getOrDefault(type, essentialsGenericSpawnerValue);
+    }
+
+    /**
+     * Silent passive refresh. Nothing happens unless the player:
+     * 1) belongs to a faction,
+     * 2) is standing in that faction's own claim,
+     * 3) has nearby chunks already loaded,
+     * 4) and those chunks are also owned by that same faction.
+     *
+     * No chunks are loaded by this path.
+     */
+    public void refreshLoadedAround(Player player) {
+        if (player == null || !player.isOnline()) return;
+        FactionService factions = plugin.factions();
+        Faction faction = factions.of(player.getUniqueId());
+        if (faction == null) return;
+        if (factions.owner(player.getLocation()) != faction) return;
+
+        int radius = Math.max(0, Math.min(12, plugin.getConfig().getInt("ftop.passive-radius-chunks", 5)));
+        Chunk centre = player.getLocation().getChunk();
+        World world = player.getWorld();
+        boolean changed = false;
+
+        for (int x = centre.getX() - radius; x <= centre.getX() + radius; x++) {
+            for (int z = centre.getZ() - radius; z <= centre.getZ() + radius; z++) {
+                if (!world.isChunkLoaded(x, z)) continue;
+
+                Location probe = new Location(world, (x << 4) + 8, world.getMinHeight(), (z << 4) + 8);
+                if (factions.owner(probe) != faction) continue;
+
+                Chunk chunk = world.getChunkAt(x, z);
+                String claim = claimKey(world, x, z);
+                ChunkSnapshot next = new ChunkSnapshot(scanChunk(chunk));
+                if (!next.equals(chunkCache.put(claim, next))) changed = true;
+            }
+        }
+
+        if (changed) dirty = true;
+    }
+
+    /**
+     * Explicit administrator-only full update. This is the only path that deliberately
+     * loads every claimed chunk. Work is batched over ticks to avoid one giant freeze.
+     */
+    public boolean startFullRebuild(CommandSender sender) {
+        if (rebuildTask != null) {
+            if (sender != null) plugin.msg(sender, "&cAn FTop full update is already running.");
+            return false;
+        }
+
+        List<Claim> claims = new ArrayList<>();
+        for (Faction faction : plugin.factions().all()) {
+            for (String key : faction.claims()) {
+                Claim claim = parse(key);
+                if (claim != null) claims.add(claim);
+            }
+        }
+
+        chunkCache.clear();
+        dirty = true;
+
+        if (claims.isEmpty()) {
+            saveCache();
+            if (sender != null) plugin.msg(sender, "&aFTop cache updated. There are no faction claims to scan.");
+            return true;
+        }
+
+        final Iterator<Claim> iterator = claims.iterator();
+        final int total = claims.size();
+        final int[] processed = {0};
+        final int batch = Math.max(1, Math.min(50, plugin.getConfig().getInt("ftop.manual-chunks-per-tick", 8)));
+
+        if (sender != null) plugin.msg(sender, "&eStarting full FTop update for &f" + total + " &eclaimed chunk(s).");
+
+        rebuildTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            int work = 0;
+            while (iterator.hasNext() && work++ < batch) {
+                Claim claim = iterator.next();
+                processed[0]++;
+
+                World world = Bukkit.getWorld(claim.world());
+                if (world == null) continue;
+
+                Location probe = new Location(world, (claim.x() << 4) + 8, world.getMinHeight(), (claim.z() << 4) + 8);
+                Faction owner = plugin.factions().owner(probe);
+                if (owner == null) continue;
+
+                Chunk chunk = world.getChunkAt(claim.x(), claim.z());
+                chunkCache.put(claim.key(), new ChunkSnapshot(scanChunk(chunk)));
+                dirty = true;
+            }
+
+            if (!iterator.hasNext()) {
+                BukkitTask done = rebuildTask;
+                rebuildTask = null;
+                if (done != null) done.cancel();
+                saveCache();
+                if (sender != null) {
+                    plugin.msg(sender, "&aFTop full update complete. Scanned &f" + processed[0] + "&a claimed chunk(s).");
+                }
+            }
+        }, 1L, 1L);
+
+        return true;
+    }
+
+    public boolean rebuildRunning() {
+        return rebuildTask != null;
+    }
+
+    public void flushIfDirty() {
+        if (dirty) saveCache();
+    }
+
+    public void shutdown() {
+        if (rebuildTask != null) {
+            rebuildTask.cancel();
+            rebuildTask = null;
+        }
+        saveCache();
+    }
+
+    public void hookSpawnerPriceService() {
+        try {
+            SpawnerPriceService service = Bukkit.getServicesManager().load(SpawnerPriceService.class);
+            if (service != null) {
+                spawnerPrices = Map.copyOf(service.buyPrices());
+                plugin.getLogger().info("Loaded " + spawnerPrices.size() + " typed spawner price(s) from MiraShop service.");
+            } else {
+                spawnerPrices = Map.of();
+            }
+        } catch (NoClassDefFoundError ignored) {
+            spawnerPrices = Map.of();
+        }
+    }
+
+    @EventHandler
+    public void onSpawnerPriceCache(SpawnerPriceCacheEvent event) {
+        spawnerPrices = Map.copyOf(event.prices());
+        plugin.getLogger().info("Refreshed cached MiraShop spawner prices: " + spawnerPrices.size() + " type(s).");
+    }
+
+    private EnumMap<EntityType, Integer> scanChunk(Chunk chunk) {
+        EnumMap<EntityType, Integer> counts = new EnumMap<>(EntityType.class);
         for (BlockState state : chunk.getTileEntities()) {
             if (!(state instanceof CreatureSpawner spawner)) continue;
             EntityType type = spawner.getSpawnedType();
             if (type == null) continue;
-            int stack = stackSize(spawner);
-            counts.merge(type, stack, Integer::sum);
-            double unit = spawnerPrices.getOrDefault(type, essentialsGenericSpawnerValue);
-            if (unit > 0D) total += unit * stack;
+            counts.merge(type, stackSize(spawner), Integer::sum);
         }
-        return new ChunkBreakdown(total, Collections.unmodifiableMap(new EnumMap<>(counts)));
-    }
-
-    public double unitPrice(EntityType type) {
-        refreshPrices();
-        return spawnerPrices.getOrDefault(type, essentialsGenericSpawnerValue);
+        return counts;
     }
 
     private int stackSize(CreatureSpawner spawner) {
@@ -76,45 +233,83 @@ public final class FactionLandValueService {
         return stored == null ? 1 : Math.max(1, stored);
     }
 
-    private void refreshPrices() {
-        long now = System.currentTimeMillis();
-        if (now - lastPriceRefresh < 30_000L) return;
-        lastPriceRefresh = now;
-        spawnerPrices.clear();
-        essentialsGenericSpawnerValue = -1D;
+    private double price(Map<EntityType, Integer> counts) {
+        double total = 0D;
+        for (Map.Entry<EntityType, Integer> entry : counts.entrySet()) {
+            double unit = unitPrice(entry.getKey());
+            if (unit > 0D) total += unit * entry.getValue();
+        }
+        return total;
+    }
 
-        Plugin shop = Bukkit.getPluginManager().getPlugin("MiraShop");
-        if (shop != null) {
-            File file = new File(shop.getDataFolder(), "shops.yml");
-            if (file.isFile()) {
-                YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-                ConfigurationSection items = yaml.getConfigurationSection("sections.spawners.items");
-                if (items != null) {
-                    for (String id : items.getKeys(false)) {
-                        String base = "sections.spawners.items." + id;
-                        String rawType = yaml.getString(base + ".spawner-type");
-                        double buy = yaml.getDouble(base + ".buy", -1D);
-                        if (rawType == null || buy < 0D) continue;
-                        try {
-                            spawnerPrices.put(EntityType.valueOf(rawType.toUpperCase(Locale.ROOT)), buy);
-                        } catch (IllegalArgumentException ignored) { }
-                    }
+    private void loadEssentialsFallback() {
+        essentialsGenericSpawnerValue = -1D;
+        var essentials = Bukkit.getPluginManager().getPlugin("Essentials");
+        if (essentials == null) return;
+
+        File worth = new File(essentials.getDataFolder(), "worth.yml");
+        if (!worth.isFile()) return;
+
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(worth);
+        essentialsGenericSpawnerValue = firstPositive(
+                yaml.getDouble("worth.spawner", -1D),
+                yaml.getDouble("worth.monster_spawner", -1D),
+                yaml.getDouble("spawner", -1D),
+                yaml.getDouble("monster_spawner", -1D)
+        );
+    }
+
+    private void loadCache() {
+        if (!cacheFile.isFile()) return;
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(cacheFile);
+        ConfigurationSection chunks = yaml.getConfigurationSection("chunks");
+        if (chunks == null) return;
+
+        for (String encoded : chunks.getKeys(false)) {
+            String claim;
+            try {
+                claim = new String(Base64.getUrlDecoder().decode(encoded), StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException ex) {
+                continue;
+            }
+
+            EnumMap<EntityType, Integer> counts = new EnumMap<>(EntityType.class);
+            ConfigurationSection countSection = chunks.getConfigurationSection(encoded + ".counts");
+            if (countSection != null) {
+                for (String typeName : countSection.getKeys(false)) {
+                    try {
+                        EntityType type = EntityType.valueOf(typeName);
+                        int amount = Math.max(0, countSection.getInt(typeName));
+                        if (amount > 0) counts.put(type, amount);
+                    } catch (IllegalArgumentException ignored) { }
                 }
+            }
+            chunkCache.put(claim, new ChunkSnapshot(counts));
+        }
+    }
+
+    private synchronized void saveCache() {
+        YamlConfiguration yaml = new YamlConfiguration();
+
+        // Drop stale entries while saving. Only chunks that are still faction-owned survive.
+        Set<String> liveClaims = new HashSet<>();
+        for (Faction faction : plugin.factions().all()) liveClaims.addAll(faction.claims());
+        chunkCache.keySet().removeIf(key -> !liveClaims.contains(key));
+
+        for (Map.Entry<String, ChunkSnapshot> entry : chunkCache.entrySet()) {
+            String encoded = Base64.getUrlEncoder().withoutPadding()
+                    .encodeToString(entry.getKey().getBytes(StandardCharsets.UTF_8));
+            for (Map.Entry<EntityType, Integer> count : entry.getValue().counts().entrySet()) {
+                yaml.set("chunks." + encoded + ".counts." + count.getKey().name(), count.getValue());
             }
         }
 
-        Plugin essentials = Bukkit.getPluginManager().getPlugin("Essentials");
-        if (essentials != null) {
-            File worth = new File(essentials.getDataFolder(), "worth.yml");
-            if (worth.isFile()) {
-                YamlConfiguration yaml = YamlConfiguration.loadConfiguration(worth);
-                essentialsGenericSpawnerValue = firstPositive(
-                        yaml.getDouble("worth.spawner", -1D),
-                        yaml.getDouble("worth.monster_spawner", -1D),
-                        yaml.getDouble("spawner", -1D),
-                        yaml.getDouble("monster_spawner", -1D)
-                );
-            }
+        try {
+            cacheFile.getParentFile().mkdirs();
+            yaml.save(cacheFile);
+            dirty = false;
+        } catch (IOException ex) {
+            plugin.getLogger().severe("Failed to save ftop-cache.yml: " + ex.getMessage());
         }
     }
 
@@ -123,14 +318,20 @@ public final class FactionLandValueService {
         return -1D;
     }
 
+    private static String claimKey(World world, int x, int z) {
+        return world.getUID() + ":" + x + ":" + z;
+    }
+
     private Claim parse(String key) {
         if (key == null) return null;
         String[] parts = key.split(":");
         if (parts.length != 3) return null;
         try {
-            return new Claim(UUID.fromString(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+            UUID world = UUID.fromString(parts[0]);
+            int x = Integer.parseInt(parts[1]);
+            int z = Integer.parseInt(parts[2]);
+            return new Claim(world, x, z, key);
         } catch (Exception ignored) {
-            plugin.getLogger().fine("Could not parse faction claim key for value: " + key);
             return null;
         }
     }
@@ -143,5 +344,13 @@ public final class FactionLandValueService {
         public int totalSpawners() { return spawnerCounts.values().stream().mapToInt(Integer::intValue).sum(); }
     }
 
-    private record Claim(UUID world, int x, int z) {}
+    private record ChunkSnapshot(Map<EntityType, Integer> counts) {
+        private ChunkSnapshot {
+            EnumMap<EntityType, Integer> copy = new EnumMap<>(EntityType.class);
+            if (counts != null) copy.putAll(counts);
+            counts = Collections.unmodifiableMap(copy);
+        }
+    }
+
+    private record Claim(UUID world, int x, int z, String key) { }
 }
