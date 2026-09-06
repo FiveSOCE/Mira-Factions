@@ -19,6 +19,15 @@ public interface MiraFactionsApi {
     boolean isWarZone(Location location);
     boolean canBuild(Player player, Location location);
 
+    /** True only when the location is claimed by the player's own faction. */
+    boolean isOwnClaim(Player player, Location location);
+
+    /** Current faction bank balance for the player's faction, or 0 when factionless. */
+    double factionBankBalance(UUID player);
+
+    /** Atomically withdraws from the player's faction bank when sufficient funds exist. */
+    boolean withdrawFactionBank(UUID player, double amount);
+
     /** True when the player's faction has the FLIGHT upgrade and the player has faction FLY permission. */
     boolean hasFactionFlightEntitlement(Player player);
 
