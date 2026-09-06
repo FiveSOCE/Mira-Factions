@@ -54,5 +54,5 @@ jobs:
             gh release create "$TAG" "$JAR" \
               --target "${{ github.sha }}" \
               --title "MiraFactions $TAG" \
-              --notes "Reworks FTop into a persistent claim cache. Passive updates only scan already-loaded nearby chunks when a faction member stands in their own claim. /fa top update is the only full claim loader. MiraShop prices now arrive through the cached SpawnerPriceService/SpawnerPriceCacheEvent integration with no direct shops.yml reads."
+              --notes "Fixes faction territory and WarZone coordinate lookups so claim-key checks no longer call Location#getChunk or synchronously load/generate chunks. Includes the 0.2.16 cached FTop architecture."
           fi
