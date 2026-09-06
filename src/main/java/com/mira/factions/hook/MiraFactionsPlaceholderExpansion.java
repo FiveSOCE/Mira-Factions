@@ -17,8 +17,6 @@ public final class MiraFactionsPlaceholderExpansion extends PlaceholderExpansion
     private final MiraFactionsPlugin plugin;
     private final FactionService service;
     private final FactionLandValueService landValue;
-    private volatile long topCacheAt;
-    private volatile List<Wealth> topCache = List.of();
 
     public MiraFactionsPlaceholderExpansion(MiraFactionsPlugin plugin, FactionService service, FactionLandValueService landValue) {
         this.plugin = plugin;
@@ -106,21 +104,15 @@ public final class MiraFactionsPlaceholderExpansion extends PlaceholderExpansion
     }
 
     private List<Wealth> top() {
-        long now = System.currentTimeMillis();
-        if (now - topCacheAt < 10_000L) return topCache;
-        synchronized (this) {
-            if (now - topCacheAt < 10_000L) return topCache;
-            List<Wealth> values = new ArrayList<>();
-            for (Faction faction : service.all()) {
-                double land = landValue.value(faction);
-                values.add(new Wealth(faction, land, land + faction.bankBalance()));
-            }
-            values.sort(Comparator.comparingDouble(Wealth::total).reversed().thenComparing(w -> w.faction().name(), String.CASE_INSENSITIVE_ORDER));
-            if (values.size() > 10) values = new ArrayList<>(values.subList(0, 10));
-            topCache = List.copyOf(values);
-            topCacheAt = now;
-            return topCache;
+        List<Wealth> values = new ArrayList<>();
+        for (Faction faction : service.all()) {
+            double land = landValue.value(faction);
+            values.add(new Wealth(faction, land, land + faction.bankBalance()));
         }
+        values.sort(Comparator.comparingDouble(Wealth::total).reversed()
+                .thenComparing(w -> w.faction().name(), String.CASE_INSENSITIVE_ORDER));
+        if (values.size() > 10) return List.copyOf(values.subList(0, 10));
+        return List.copyOf(values);
     }
 
     private record Wealth(Faction faction, double land, double total) {}
