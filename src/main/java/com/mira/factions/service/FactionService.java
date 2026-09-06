@@ -910,7 +910,10 @@ public final class FactionService {
     }
 
     public String claimKey(Location location) {
-        return location.getWorld().getUID() + ":" + location.getChunk().getX() + ":" + location.getChunk().getZ();
+        if (location == null || location.getWorld() == null) return "";
+        int chunkX = Math.floorDiv(location.getBlockX(), 16);
+        int chunkZ = Math.floorDiv(location.getBlockZ(), 16);
+        return location.getWorld().getUID() + ":" + chunkX + ":" + chunkZ;
     }
 
     public String map(Player viewer, int radius) {
