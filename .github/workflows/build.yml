@@ -54,5 +54,5 @@ jobs:
             gh release create "$TAG" "$JAR" \
               --target "${{ github.sha }}" \
               --title "MiraFactions $TAG" \
-              --notes "FTop material valuation now defaults to MiraShop SELL prices, matching Essentials /worth. Existing ftop-values.yml files are migrated from BUY to SELL automatically while retaining the placed wealth-block whitelist."
+              --notes "Fixes missing FTop wealth blocks by reading material SELL values directly from EssentialsX Worth#getPrice at runtime. Placed wealth blocks remain whitelist-only; typed spawners remain valued separately through MiraShop."
           fi
