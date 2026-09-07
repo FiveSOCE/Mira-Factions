@@ -30,6 +30,8 @@ import org.bukkit.scheduler.BukkitTask;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.util.*;
 
 public final class FactionLandValueService {
@@ -122,6 +124,12 @@ public final class FactionLandValueService {
 
         Double override = materialOverrides.get(material);
         if (override != null && Double.isFinite(override) && override >= 0D) return override;
+
+        if (materialPriceSource.equals("SELL")) {
+            Double worthPrice = worthValues.get(material);
+            if (worthPrice != null && Double.isFinite(worthPrice) && worthPrice >= 0D) return worthPrice;
+            return -1D;
+        }
 
         Double shopPrice = shopMaterialPrices.get(material);
         if (shopPrice != null && Double.isFinite(shopPrice) && shopPrice >= 0D) return shopPrice;
@@ -553,27 +561,31 @@ public final class FactionLandValueService {
 
         var essentials = Bukkit.getPluginManager().getPlugin("Essentials");
         if (essentials != null) {
-            File worth = new File(essentials.getDataFolder(), "worth.yml");
-            if (worth.isFile()) {
-                YamlConfiguration yaml = YamlConfiguration.loadConfiguration(worth);
-                ConfigurationSection section = yaml.getConfigurationSection("worth");
-                if (section == null) section = yaml;
+            try {
+                Object worth = essentials.getClass().getMethod("getWorth").invoke(essentials);
+                worth.getClass().getMethod("reloadConfig").invoke(worth);
 
-                for (String key : section.getKeys(false)) {
-                    Material material = Material.matchMaterial(key);
-                    if (material == null) material = Material.matchMaterial(key.toUpperCase(Locale.ROOT));
-                    double value = section.getDouble(key, -1D);
-                    if (material != null && Double.isFinite(value) && value >= 0D) {
-                        worthValues.put(material, value);
+                Method getPrice = Arrays.stream(worth.getClass().getMethods())
+                        .filter(method -> method.getName().equals("getPrice") && method.getParameterCount() == 2)
+                        .findFirst()
+                        .orElseThrow(() -> new NoSuchMethodException("Essentials Worth#getPrice"));
+
+                for (Material material : Material.values()) {
+                    if (!material.isItem() || material.isAir()) continue;
+                    try {
+                        Object raw = getPrice.invoke(worth, essentials, new ItemStack(material));
+                        if (raw instanceof BigDecimal value && value.signum() >= 0) {
+                            worthValues.put(material, value.doubleValue());
+                        }
+                    } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
+                        // Unsupported material or no configured worth.
                     }
                 }
 
-                essentialsGenericSpawnerValue = firstPositive(
-                        section.getDouble("spawner", -1D),
-                        section.getDouble("monster_spawner", -1D),
-                        yaml.getDouble("spawner", -1D),
-                        yaml.getDouble("monster_spawner", -1D)
-                );
+                Double genericSpawner = worthValues.get(Material.SPAWNER);
+                essentialsGenericSpawnerValue = genericSpawner == null ? -1D : genericSpawner;
+            } catch (ReflectiveOperationException ex) {
+                plugin.getLogger().warning("Failed to read Essentials runtime Worth table for FTop: " + ex.getMessage());
             }
         }
 
@@ -587,7 +599,7 @@ public final class FactionLandValueService {
             }
         }
 
-        plugin.getLogger().info("Loaded FTop material values for " + worthValues.size() + " material(s).");
+        plugin.getLogger().info("Loaded Essentials runtime FTop sell values for " + worthValues.size() + " material(s).");
     }
 
     private void loadCache() {
