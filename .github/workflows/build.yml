@@ -54,5 +54,5 @@ jobs:
             gh release create "$TAG" "$JAR" \
               --target "${{ github.sha }}" \
               --title "MiraFactions $TAG" \
-              --notes "FTop now values placed and stored spawners, configured/Essentials-worth materials, valuable blocks, chest/barrel contents and nested shulkers across faction claims. Live asset changes refresh the affected claim cache and /fa top update performs a full batched rebuild."
+              --notes "/f top and /f value now read the same shared FTop asset cache rebuilt by /fa top update. Fixes zero land value caused by an accidental second valuation-service instance."
           fi
