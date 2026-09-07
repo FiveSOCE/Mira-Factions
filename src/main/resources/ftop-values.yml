@@ -1,25 +1,36 @@
 # MiraFactions FTop material valuation
 #
-# MiraShop is the primary source of normal block/item values.
+# MiraShop is the primary source of normal item values.
 # Spawners continue to use MiraShop's typed spawner buy-price service.
 #
-# source:
-#   BUY  = use MiraShop buy prices (default/recommended for competitive wealth)
-#   SELL = use MiraShop sell prices
+# IMPORTANT:
+# Only materials listed under counted-placed-materials contribute value when
+# physically placed in claimed land. This prevents normal building blocks,
+# natural terrain, and shop-priced utility blocks from inflating FTop.
 source: BUY
 
-# If true, materials missing from MiraShop may fall back to EssentialsX worth.yml.
-# Recommended false when MiraShop should be the single economy source of truth.
 fallback-to-essentials-worth: false
 
-# These always win over MiraShop prices.
-# Set a material here when you want FTop value to differ from its shop price.
-overrides:
-  # DIAMOND_BLOCK: 25000.0
-  # NETHERITE_BLOCK: 100000.0
+# Placed blocks that count toward FTop.
+# Keep this intentionally small: classic faction wealth blocks only.
+counted-placed-materials:
+  - IRON_BLOCK
+  - GOLD_BLOCK
+  - EMERALD_BLOCK
+  - DIAMOND_BLOCK
+  - NETHERITE_BLOCK
 
-# These materials NEVER add FTop value, regardless of MiraShop or override price.
-# SPAWNER is excluded here because typed spawners are valued separately.
+# These override the selected MiraShop price for both container valuation and
+# placed value blocks.
+overrides:
+  # IRON_BLOCK: 750.0
+  # GOLD_BLOCK: 1200.0
+  # EMERALD_BLOCK: 2500.0
+  # DIAMOND_BLOCK: 22500.0
+  # NETHERITE_BLOCK: 292500.0
+
+# These NEVER add FTop value, even if present above or priced by MiraShop.
+# SPAWNER is handled separately through typed spawner valuation.
 exclude-materials:
   - AIR
   - CAVE_AIR
