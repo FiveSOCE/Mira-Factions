@@ -2,6 +2,7 @@ package com.mira.factions.command;
 
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.Faction;
+import com.mira.factions.gui.FTopHologramService;
 import com.mira.factions.model.FactionRank;
 import com.mira.factions.model.TerritoryType;
 import com.mira.factions.model.UpgradeType;
@@ -19,10 +20,12 @@ public final class FactionAdminCommand implements TabExecutor {
 
     private final MiraFactionsPlugin plugin;
     private final FactionService service;
+    private final FTopHologramService ftopHologram;
 
-    public FactionAdminCommand(MiraFactionsPlugin plugin, FactionService service) {
+    public FactionAdminCommand(MiraFactionsPlugin plugin, FactionService service, FTopHologramService ftopHologram) {
         this.plugin = plugin;
         this.service = service;
+        this.ftopHologram = ftopHologram;
     }
 
     public static boolean chatSpy(UUID player) {
@@ -72,9 +75,31 @@ public final class FactionAdminCommand implements TabExecutor {
             case "upgrade", "upgrades" -> upgrade(sender, args);
             case "info" -> info(sender, args);
             case "top" -> top(sender, args);
+            case "hologram" -> hologram(sender, args);
             default -> help(sender, 1);
         }
         return true;
+    }
+
+    private void hologram(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            plugin.msg(sender, "&cPlayers only.");
+            return;
+        }
+        if (args.length < 2) {
+            plugin.msg(sender, "&cUsage: /fa hologram <top|remove>");
+            return;
+        }
+        if (args[1].equalsIgnoreCase("top")) {
+            ftopHologram.spawn(player.getLocation().clone().add(0, 2.2, 0));
+            plugin.msg(sender, "&aFTop hologram spawned here.");
+            return;
+        }
+        if (args[1].equalsIgnoreCase("remove")) {
+            plugin.msg(sender, ftopHologram.remove() ? "&aFTop hologram removed." : "&7No FTop hologram was active.");
+            return;
+        }
+        plugin.msg(sender, "&cUsage: /fa hologram <top|remove>");
     }
 
     private void top(CommandSender sender, String[] args) {
