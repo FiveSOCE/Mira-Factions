@@ -67,7 +67,7 @@ public final class FactionHistoryListener implements Listener {
                 Chunk chunk = player.getLocation().getChunk();
                 raid = new RaidSnapshot(defender.id(), defender.name(), beforeFaction.id(), beforeFaction.name(),
                         chunk.getWorld().getName() + " " + chunk.getX() + "," + chunk.getZ(),
-                        landValue.breakdown(chunk).spawnerValue());
+                        landValue.breakdown(chunk).totalValue());
             }
         }
 
@@ -152,7 +152,7 @@ public final class FactionHistoryListener implements Listener {
     public void snapshotValues() {
         for (Faction faction : service.all()) {
             FactionLandValueService.Breakdown breakdown = landValue.breakdown(faction);
-            history.recordValue(faction, breakdown.spawnerValue(), faction.bankBalance());
+            history.recordValue(faction, breakdown.totalValue(), faction.bankBalance());
         }
     }
 
@@ -199,7 +199,7 @@ public final class FactionHistoryListener implements Listener {
         for (int i = start; i < Math.min(entries.size(), start + 10); i++) {
             var e = entries.get(i);
             plugin.msg(player, "&8" + history.displayTime(e.time()) + " &7Total &a" + money(e.totalValue())
-                    + " &7Spawners &f" + money(e.spawnerValue()) + " &7Bank &f" + money(e.bankValue()));
+                    + " &7Land &f" + money(e.spawnerValue()) + " &7Bank &f" + money(e.bankValue()));
         }
     }
 
