@@ -54,5 +54,5 @@ jobs:
             gh release create "$TAG" "$JAR" \
               --target "${{ github.sha }}" \
               --title "MiraFactions $TAG" \
-              --notes "/f top and /f value now read the same shared FTop asset cache rebuilt by /fa top update. Fixes zero land value caused by an accidental second valuation-service instance."
+              --notes "FTop normal block/item values now use MiraShop MaterialPriceService by default, with dedicated ftop-values.yml BUY/SELL source selection, manual overrides, Essentials fallback toggle and a hard material exclusion list."
           fi
