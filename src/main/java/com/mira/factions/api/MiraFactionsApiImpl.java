@@ -18,6 +18,13 @@ public final class MiraFactionsApiImpl implements MiraFactionsApi {
         return faction == null ? Optional.empty() : Optional.of(faction.name());
     }
 
+    @Override public Optional<String> factionRank(UUID player) {
+        Faction faction = service.of(player);
+        if (faction == null) return Optional.empty();
+        FactionRank rank = faction.rank(player);
+        return rank == null ? Optional.empty() : Optional.of(rank.name());
+    }
+
     @Override public Optional<UUID> factionId(UUID player) {
         Faction faction = service.of(player);
         return faction == null ? Optional.empty() : Optional.of(faction.id());
