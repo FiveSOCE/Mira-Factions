@@ -91,7 +91,15 @@ public final class ProtectedZoneListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
-        if (safeZone(event.getLocation())) event.setCancelled(true);
+        if (safeZone(event.getLocation())) {
+            event.setCancelled(true);
+            return;
+        }
+        if (event.getEntityType() == org.bukkit.entity.EntityType.CREEPER
+                && event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.SPAWNER_EGG
+                && protectedZone(event.getLocation())) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
