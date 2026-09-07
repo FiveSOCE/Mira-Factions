@@ -40,12 +40,16 @@ public final class FTopPodiumService implements Listener {
         Material[] icons = {Material.NETHER_STAR, Material.DIAMOND_BLOCK, Material.GOLD_BLOCK, Material.IRON_BLOCK, Material.EMERALD_BLOCK};
         for (int i = 0; i < Math.min(5, ranked.size()); i++) {
             Faction faction = ranked.get(i);
-            double land = landValue.value(faction);
+            FactionLandValueService.Breakdown breakdown = landValue.breakdown(faction);
+            double land = breakdown.totalValue();
             double total = land + faction.bankBalance();
             FactionSeasonService.Stats stats = seasons.stats(faction);
             List<String> lore = List.of(
                     "&7Total Wealth: &a" + money(total),
-                    "&7Spawner Land: &f" + money(land),
+                    "&7Land Value: &f" + money(land),
+                    "&8  Spawners: &f" + money(breakdown.spawnerValue()),
+                    "&8  Valuable Blocks: &f" + money(breakdown.blockValue()),
+                    "&8  Containers: &f" + money(breakdown.containerValue()),
                     "&7Faction Bank: &f" + money(faction.bankBalance()),
                     "&7Power: &f" + String.format(Locale.US, "%.1f", factions.factionPower(faction)),
                     "&7Members: &f" + faction.members().size(),
