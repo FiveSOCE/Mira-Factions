@@ -39,7 +39,7 @@ public final class FactionSeasonListener implements Listener {
         Chunk chunk = player.getLocation().getChunk();
         UUID defenderId = defender.id();
         UUID attackerId = attacker.id();
-        double value = landValue.breakdown(chunk).spawnerValue();
+        double value = landValue.breakdown(chunk).totalValue();
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             Faction now = service.owner(player.getLocation());
             if (now != null && now.id().equals(attackerId)) {
