@@ -79,13 +79,30 @@ chat:
   public-faction-tag: true
 
 ftop:
-  # Passive updates never load chunks. A player must be standing in their own faction claim,
-  # and only already-loaded nearby chunks owned by that same faction are refreshed.
-  passive-check-seconds: 10
-  passive-radius-chunks: 5
+  # Passive discovery never loads chunks. It only initializes already-loaded own claims
+  # that are not yet present in the FTop asset cache.
+  passive-check-seconds: 30
+  passive-radius-chunks: 2
 
-  # /fa top update is the only path that deliberately loads all faction claims.
-  manual-chunks-per-tick: 8
+  # /fa top update deliberately loads every faction claim and performs a complete scan.
+  # Keep this conservative because a full scan includes every block column plus tile inventories.
+  manual-chunks-per-tick: 2
+
+  # Live changes are debounced so rapid block/container activity only rescans a claimed chunk once.
+  refresh-debounce-ticks: 10
+
+  count-placed-valuables: true
+  count-container-items: true
+  container-max-nesting-depth: 4
+
+  # Material values first use these overrides. Materials not listed here fall back to
+  # EssentialsX worth.yml when a positive worth exists.
+  # Edit these numbers to match your server economy.
+  item-values:
+    GOLD_BLOCK: 10000.0
+    DIAMOND_BLOCK: 25000.0
+    EMERALD_BLOCK: 20000.0
+    NETHERITE_BLOCK: 100000.0
 
 history:
   value-snapshot-minutes: 10
