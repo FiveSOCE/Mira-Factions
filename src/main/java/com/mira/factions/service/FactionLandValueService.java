@@ -623,6 +623,12 @@ public final class FactionLandValueService {
             Map<Material, Long> storedItemCounts
     ) {
         public double totalValue() { return spawnerValue + blockValue + containerValue; }
+        public Map<EntityType, Integer> spawnerCounts() {
+            EnumMap<EntityType, Integer> combined = new EnumMap<>(EntityType.class);
+            placedSpawnerCounts.forEach((type, amount) -> combined.merge(type, amount, Integer::sum));
+            storedSpawnerCounts.forEach((type, amount) -> combined.merge(type, amount, Integer::sum));
+            return Collections.unmodifiableMap(combined);
+        }
         public int totalPlacedSpawners() { return placedSpawnerCounts.values().stream().mapToInt(Integer::intValue).sum(); }
         public int totalStoredSpawners() { return storedSpawnerCounts.values().stream().mapToInt(Integer::intValue).sum(); }
         public int totalSpawners() { return totalPlacedSpawners() + totalStoredSpawners(); }
