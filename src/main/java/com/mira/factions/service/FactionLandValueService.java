@@ -3,6 +3,7 @@ package com.mira.factions.service;
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.Faction;
 import com.mira.shop.api.SpawnerPriceService;
+import com.mira.shop.api.MaterialPriceService;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -38,9 +39,15 @@ public final class FactionLandValueService {
 
     private final MiraFactionsPlugin plugin;
     private final File cacheFile;
+    private final File valuesFile;
     private final Map<String, ChunkSnapshot> chunkCache = new HashMap<>();
     private final Set<String> queuedRefreshes = new HashSet<>();
     private final Map<Material, Double> worthValues = new EnumMap<>(Material.class);
+    private final Map<Material, Double> shopMaterialPrices = new EnumMap<>(Material.class);
+    private final Map<Material, Double> materialOverrides = new EnumMap<>(Material.class);
+    private final Set<Material> excludedMaterials = EnumSet.noneOf(Material.class);
+    private boolean fallbackToEssentialsWorth;
+    private String materialPriceSource = "BUY";
     private volatile Map<EntityType, Double> spawnerPrices = Map.of();
     private double essentialsGenericSpawnerValue = -1D;
     private boolean dirty;
@@ -49,8 +56,12 @@ public final class FactionLandValueService {
     public FactionLandValueService(MiraFactionsPlugin plugin) {
         this.plugin = plugin;
         this.cacheFile = new File(plugin.getDataFolder(), "ftop-cache.yml");
+        this.valuesFile = new File(plugin.getDataFolder(), "ftop-values.yml");
+        if (!valuesFile.isFile()) plugin.saveResource("ftop-values.yml", false);
         loadCache();
+        loadValueConfig();
         loadWorthValues();
+        refreshMaterialPricesFromService();
     }
 
     public double value(Faction faction) {
@@ -106,14 +117,15 @@ public final class FactionLandValueService {
     }
 
     public double unitPrice(Material material) {
-        if (material == null) return -1D;
+        if (material == null || excludedMaterials.contains(material)) return -1D;
 
-        String path = "ftop.item-values." + material.name();
-        if (plugin.getConfig().contains(path)) {
-            double configured = plugin.getConfig().getDouble(path, -1D);
-            if (Double.isFinite(configured) && configured >= 0D) return configured;
-        }
-        return worthValues.getOrDefault(material, -1D);
+        Double override = materialOverrides.get(material);
+        if (override != null && Double.isFinite(override) && override >= 0D) return override;
+
+        Double shopPrice = shopMaterialPrices.get(material);
+        if (shopPrice != null && Double.isFinite(shopPrice) && shopPrice >= 0D) return shopPrice;
+
+        return fallbackToEssentialsWorth ? worthValues.getOrDefault(material, -1D) : -1D;
     }
 
     public boolean isTrackedMaterial(Material material) {
@@ -175,7 +187,9 @@ public final class FactionLandValueService {
     }
 
     public boolean startFullRebuild(CommandSender sender) {
+        loadValueConfig();
         refreshSpawnerPricesFromService();
+        refreshMaterialPricesFromService();
         loadWorthValues();
 
         if (rebuildTask != null) {
@@ -275,6 +289,63 @@ public final class FactionLandValueService {
     public void refreshSpawnerPricesFromService() {
         SpawnerPriceService service = Bukkit.getServicesManager().load(SpawnerPriceService.class);
         if (service != null) updateSpawnerPrices(service.buyPrices());
+    }
+
+    public void refreshMaterialPricesFromService() {
+        shopMaterialPrices.clear();
+        MaterialPriceService service = Bukkit.getServicesManager().load(MaterialPriceService.class);
+        if (service == null) {
+            plugin.getLogger().warning("MiraShop MaterialPriceService unavailable; FTop normal material values will use overrides"
+                    + (fallbackToEssentialsWorth ? " / Essentials fallback." : " only."));
+            return;
+        }
+
+        Map<Material, Double> source = materialPriceSource.equals("SELL")
+                ? service.sellPrices()
+                : service.buyPrices();
+
+        for (Map.Entry<Material, Double> entry : source.entrySet()) {
+            Material material = entry.getKey();
+            Double value = entry.getValue();
+            if (material != null && value != null && Double.isFinite(value) && value >= 0D) {
+                shopMaterialPrices.put(material, value);
+            }
+        }
+
+        plugin.getLogger().info("Loaded " + shopMaterialPrices.size()
+                + " MiraShop " + materialPriceSource + " material price(s) for FTop.");
+    }
+
+    private void loadValueConfig() {
+        if (!valuesFile.isFile()) plugin.saveResource("ftop-values.yml", false);
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(valuesFile);
+
+        materialPriceSource = yaml.getString("source", "BUY").trim().toUpperCase(Locale.ROOT);
+        if (!materialPriceSource.equals("SELL")) materialPriceSource = "BUY";
+        fallbackToEssentialsWorth = yaml.getBoolean("fallback-to-essentials-worth", false);
+
+        materialOverrides.clear();
+        ConfigurationSection overrides = yaml.getConfigurationSection("overrides");
+        if (overrides != null) {
+            for (String key : overrides.getKeys(false)) {
+                Material material = Material.matchMaterial(key);
+                double value = overrides.getDouble(key, -1D);
+                if (material != null && Double.isFinite(value) && value >= 0D) {
+                    materialOverrides.put(material, value);
+                }
+            }
+        }
+
+        excludedMaterials.clear();
+        for (String raw : yaml.getStringList("exclude-materials")) {
+            Material material = Material.matchMaterial(raw);
+            if (material != null) excludedMaterials.add(material);
+            else plugin.getLogger().warning("Unknown FTop excluded material in ftop-values.yml: " + raw);
+        }
+
+        plugin.getLogger().info("Loaded FTop value config: source=" + materialPriceSource
+                + ", overrides=" + materialOverrides.size()
+                + ", excluded=" + excludedMaterials.size() + ".");
     }
 
     public boolean rebuildRunning() {
