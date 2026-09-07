@@ -42,8 +42,8 @@ jobs:
           path: build/libs/MiraFactions-${{ steps.version.outputs.version }}.jar
           if-no-files-found: error
 
-      - name: Publish release branch
-        if: success() && startsWith(github.ref, 'refs/heads/release/')
+      - name: Publish release
+        if: success() && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
@@ -54,5 +54,5 @@ jobs:
             gh release create "$TAG" "$JAR" \
               --target "${{ github.sha }}" \
               --title "MiraFactions $TAG" \
-              --notes "Fixes FTop land-value updates for spawners. MiraFactions now consumes MiraSpawners stack-change events for immediate claim-cache updates, refreshes current MiraShop spawner prices before manual /fa top update rebuilds, and verifies claim ownership during full scans before committing rebuilt land values."
+              --notes "Adds public faction-rank API support for MiraChats faction prefixes. Gameplay behavior is unchanged."
           fi
