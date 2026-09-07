@@ -59,7 +59,10 @@ public final class MiraFactionsPlaceholderExpansion extends PlaceholderExpansion
             case "members" -> faction == null ? "0" : Integer.toString(faction.members().size());
             case "online" -> faction == null ? "0" : Long.toString(faction.members().keySet().stream().map(plugin.getServer()::getPlayer).filter(Objects::nonNull).count());
             case "value", "wealth" -> faction == null ? "0.00" : String.format(Locale.US, "%.2f", landValue.value(faction) + faction.bankBalance());
-            case "land_value", "spawner_value" -> faction == null ? "0.00" : String.format(Locale.US, "%.2f", landValue.value(faction));
+            case "land_value" -> faction == null ? "0.00" : String.format(Locale.US, "%.2f", landValue.value(faction));
+            case "spawner_value" -> faction == null ? "0.00" : String.format(Locale.US, "%.2f", landValue.breakdown(faction).spawnerValue());
+            case "block_value" -> faction == null ? "0.00" : String.format(Locale.US, "%.2f", landValue.breakdown(faction).blockValue());
+            case "container_value" -> faction == null ? "0.00" : String.format(Locale.US, "%.2f", landValue.breakdown(faction).containerValue());
             case "season_peak", "peak_wealth" -> String.format(Locale.US, "%.2f", season.peakWealth());
             case "season_best_rank" -> Integer.toString(season.bestFtopRank());
             case "season_raids_won" -> Integer.toString(season.raidsWon());
@@ -94,7 +97,10 @@ public final class MiraFactionsPlaceholderExpansion extends PlaceholderExpansion
         return switch (parts[2]) {
             case "name" -> entry.faction().name();
             case "value", "wealth" -> String.format(Locale.US, "%.2f", entry.total());
-            case "land", "spawners" -> String.format(Locale.US, "%.2f", entry.land());
+            case "land" -> String.format(Locale.US, "%.2f", entry.land());
+            case "spawners" -> String.format(Locale.US, "%.2f", entry.spawners());
+            case "blocks" -> String.format(Locale.US, "%.2f", entry.blocks());
+            case "containers" -> String.format(Locale.US, "%.2f", entry.containers());
             case "bank" -> String.format(Locale.US, "%.2f", entry.faction().bankBalance());
             case "power" -> String.format(Locale.US, "%.1f", service.factionPower(entry.faction()));
             case "members" -> Integer.toString(entry.faction().members().size());
@@ -106,8 +112,16 @@ public final class MiraFactionsPlaceholderExpansion extends PlaceholderExpansion
     private List<Wealth> top() {
         List<Wealth> values = new ArrayList<>();
         for (Faction faction : service.all()) {
-            double land = landValue.value(faction);
-            values.add(new Wealth(faction, land, land + faction.bankBalance()));
+            FactionLandValueService.Breakdown breakdown = landValue.breakdown(faction);
+            double land = breakdown.totalValue();
+            values.add(new Wealth(
+                    faction,
+                    land,
+                    breakdown.spawnerValue(),
+                    breakdown.blockValue(),
+                    breakdown.containerValue(),
+                    land + faction.bankBalance()
+            ));
         }
         values.sort(Comparator.comparingDouble(Wealth::total).reversed()
                 .thenComparing(w -> w.faction().name(), String.CASE_INSENSITIVE_ORDER));
@@ -115,5 +129,5 @@ public final class MiraFactionsPlaceholderExpansion extends PlaceholderExpansion
         return List.copyOf(values);
     }
 
-    private record Wealth(Faction faction, double land, double total) {}
+    private record Wealth(Faction faction, double land, double spawners, double blocks, double containers, double total) {}
 }
