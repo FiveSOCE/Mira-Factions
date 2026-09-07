@@ -7,7 +7,7 @@
 # Only materials listed under counted-placed-materials contribute value when
 # physically placed in claimed land. This prevents normal building blocks,
 # natural terrain, and shop-priced utility blocks from inflating FTop.
-source: BUY
+source: SELL
 
 fallback-to-essentials-worth: false
 
@@ -20,7 +20,7 @@ counted-placed-materials:
   - DIAMOND_BLOCK
   - NETHERITE_BLOCK
 
-# These override the selected MiraShop price for both container valuation and
+# These override the selected MiraShop SELL price for both container valuation and
 # placed value blocks.
 overrides:
   # IRON_BLOCK: 750.0
