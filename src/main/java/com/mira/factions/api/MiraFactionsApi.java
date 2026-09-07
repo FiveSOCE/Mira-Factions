@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface MiraFactionsApi {
     Optional<String> factionName(UUID player);
+    Optional<String> factionRank(UUID player);
     Optional<UUID> factionId(UUID player);
     Optional<String> territoryFaction(Location location);
     Relation relation(UUID firstPlayer, UUID secondPlayer);
