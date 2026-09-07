@@ -4,7 +4,7 @@ import java.security.MessageDigest
 plugins { java }
 
 group = "com.mira"
-version = "0.2.25"
+version = "0.2.26"
 
 repositories {
     mavenCentral()
@@ -14,8 +14,8 @@ repositories {
 }
 
 
-val miraShopVersion = "0.1.12"
-val miraShopSha256 = "a2b2299c5282b64f32c72df1f721cd90234b0171650c9ea475f242f3046453a3"
+val miraShopVersion = "0.1.13"
+val miraShopSha256 = "6f300b1b2ab245c08597fad6c79393c22ec89f30dc8a000967682fe3f1572bb7"
 val miraShopJar = layout.projectDirectory.file("libs/MiraShop-$miraShopVersion.jar").asFile
 
 val miraSpawnersVersion = "0.1.11"
