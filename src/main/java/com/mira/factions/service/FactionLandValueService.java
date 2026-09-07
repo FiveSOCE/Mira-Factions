@@ -48,7 +48,7 @@ public final class FactionLandValueService {
     private final Set<Material> excludedMaterials = EnumSet.noneOf(Material.class);
     private final Set<Material> placedValueMaterials = EnumSet.noneOf(Material.class);
     private boolean fallbackToEssentialsWorth;
-    private String materialPriceSource = "BUY";
+    private String materialPriceSource = "SELL";
     private volatile Map<EntityType, Double> spawnerPrices = Map.of();
     private double essentialsGenericSpawnerValue = -1D;
     private boolean dirty;
@@ -327,8 +327,18 @@ public final class FactionLandValueService {
         if (!valuesFile.isFile()) plugin.saveResource("ftop-values.yml", false);
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(valuesFile);
 
-        materialPriceSource = yaml.getString("source", "BUY").trim().toUpperCase(Locale.ROOT);
-        if (!materialPriceSource.equals("SELL")) materialPriceSource = "BUY";
+        if (!yaml.getBoolean("meta.migrations.v0_2_28_sell_source", false)) {
+            yaml.set("source", "SELL");
+            yaml.set("meta.migrations.v0_2_28_sell_source", true);
+            try {
+                yaml.save(valuesFile);
+            } catch (IOException ex) {
+                plugin.getLogger().severe("Failed to migrate FTop material source to SELL: " + ex.getMessage());
+            }
+        }
+
+        materialPriceSource = yaml.getString("source", "SELL").trim().toUpperCase(Locale.ROOT);
+        if (!materialPriceSource.equals("BUY")) materialPriceSource = "SELL";
         fallbackToEssentialsWorth = yaml.getBoolean("fallback-to-essentials-worth", false);
 
         materialOverrides.clear();
