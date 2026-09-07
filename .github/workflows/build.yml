@@ -50,7 +50,9 @@ jobs:
         run: |
           TAG="v$VERSION"
           JAR="build/libs/MiraFactions-$VERSION.jar"
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$JAR" --clobber
+          else
             gh release create "$TAG" "$JAR" \
               --target "${{ github.sha }}" \
               --title "MiraFactions $TAG" \
