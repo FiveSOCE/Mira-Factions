@@ -3,6 +3,7 @@ package com.mira.factions;
 import com.mira.factions.api.*;
 import com.mira.factions.command.*;
 import com.mira.factions.gui.FTopPodiumService;
+import com.mira.factions.gui.FTopHologramService;
 import com.mira.factions.gui.FactionGuiService;
 import com.mira.factions.hook.MiraFactionsPlaceholderExpansion;
 import com.mira.factions.hook.MiraSpawnersValueBridge;
