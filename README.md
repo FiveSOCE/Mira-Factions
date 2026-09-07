@@ -1,6 +1,6 @@
-## v0.2.24 full FTop asset valuation
+## v0.2.25 shared FTop cache fix
 
-FTop now values full claimed assets instead of only placed spawners. Claimed chunks can contribute placed/stored spawners, configured valuable blocks, Essentials-worth materials, chest/barrel contents and nested shulker contents. Live asset changes refresh the affected claim cache, while `/fa top update` performs a complete batched rebuild.
+`/f top`, `/f value`, FTop history, seasons and `/fa top update` now all use the same shared valuation cache. The full claimed-asset valuation from v0.2.24 remains included.
 
 # MiraFactions
 
@@ -8,7 +8,7 @@ MiraFactions is the power, territory, raiding and faction-management system for 
 
 ## Download
 
-[**Download MiraFactions v0.2.24**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.24/MiraFactions-0.2.24.jar)
+[**Download MiraFactions v0.2.25**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.25/MiraFactions-0.2.25.jar)
 
 ## Requirements / Dependencies
 
