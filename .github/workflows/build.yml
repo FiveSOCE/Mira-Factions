@@ -54,5 +54,5 @@ jobs:
             gh release create "$TAG" "$JAR" \
               --target "${{ github.sha }}" \
               --title "MiraFactions $TAG" \
-              --notes "FTop normal block/item values now use MiraShop MaterialPriceService by default, with dedicated ftop-values.yml BUY/SELL source selection, manual overrides, Essentials fallback toggle and a hard material exclusion list."
+              --notes "FTop placed block value now uses an explicit wealth-block whitelist in ftop-values.yml. By default only Iron, Gold, Emerald, Diamond and Netherite Blocks count as placed block value; containers and typed spawners remain valued separately."
           fi
