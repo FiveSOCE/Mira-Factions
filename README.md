@@ -1,3 +1,12 @@
+## v0.2.30 FTop hologram and Creeper-egg raiding rules
+
+- `/fa hologram top` creates one persistent native TextDisplay **Faction Top 10** hologram at the administrator's location.
+- The hologram automatically refreshes faction ordering/value and persists its location in `ftop-hologram.yml`.
+- `/fa hologram remove` removes it.
+- Creeper spawn eggs are explicitly allowed in **Wilderness** and ordinary **Faction** territory as a raiding mechanic.
+- Creeper spawn eggs are explicitly denied in **SafeZone** and **WarZone**.
+- The protected-zone rule is enforced both at player interaction and at the actual `SPAWNER_EGG` creature-spawn event, preventing dispenser/alternate activation paths from bypassing it.
+
 ## v0.2.25 shared FTop cache fix
 
 `/f top`, `/f value`, FTop history, seasons and `/fa top update` now all use the same shared valuation cache. The full claimed-asset valuation from v0.2.24 remains included.
@@ -8,7 +17,7 @@ MiraFactions is the power, territory, raiding and faction-management system for 
 
 ## Download
 
-[**Download MiraFactions v0.2.25**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.25/MiraFactions-0.2.25.jar)
+[**Download MiraFactions v0.2.30**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.30/MiraFactions-0.2.30.jar)
 
 ## Requirements / Dependencies
 
