@@ -39,6 +39,7 @@ public final class FactionLandValueService {
     private final MiraFactionsPlugin plugin;
     private final File cacheFile;
     private final Map<String, ChunkSnapshot> chunkCache = new HashMap<>();
+    private final Set<String> queuedRefreshes = new HashSet<>();
     private final Map<Material, Double> worthValues = new EnumMap<>(Material.class);
     private volatile Map<EntityType, Double> spawnerPrices = Map.of();
     private double essentialsGenericSpawnerValue = -1D;
@@ -146,6 +147,18 @@ public final class FactionLandValueService {
         }
 
         if (changed) dirty = true;
+    }
+
+    public void queueRefresh(Location location) {
+        if (location == null || location.getWorld() == null) return;
+        String key = claimKey(location.getWorld(), location.getBlockX() >> 4, location.getBlockZ() >> 4);
+        if (!queuedRefreshes.add(key)) return;
+
+        Location snapshot = location.clone();
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            queuedRefreshes.remove(key);
+            refreshChunk(snapshot);
+        }, Math.max(1L, plugin.getConfig().getLong("ftop.refresh-debounce-ticks", 10L)));
     }
 
     public void refreshChunk(Location location) {
