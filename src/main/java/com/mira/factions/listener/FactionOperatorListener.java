@@ -32,10 +32,10 @@ public final class FactionOperatorListener implements Listener {
     private final Set<UUID> autoMap = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Double> operatorPower = new ConcurrentHashMap<>();
 
-    public FactionOperatorListener(MiraFactionsPlugin plugin, FactionService service) {
+    public FactionOperatorListener(MiraFactionsPlugin plugin, FactionService service, FactionLandValueService landValue) {
         this.plugin = plugin;
         this.service = service;
-        this.landValue = new FactionLandValueService(plugin);
+        this.landValue = landValue;
         recoverOutOfRangeOperatorPower();
         Bukkit.getScheduler().runTaskTimer(plugin, this::enforceOperatorPower, 20L, 20L);
     }
@@ -206,13 +206,18 @@ public final class FactionOperatorListener implements Listener {
         }
         FactionLandValueService.Breakdown breakdown = landValue.breakdown(faction);
         double bank = faction.bankBalance();
-        double total = breakdown.spawnerValue() + bank;
+        double total = breakdown.totalValue() + bank;
         plugin.msg(player, "&5&m--------------------------------");
         plugin.msg(player, "&d" + faction.name() + " Value");
         plugin.msg(player, "&7Total Wealth: &a$" + money(total));
-        plugin.msg(player, "&7Spawner Land Value: &f$" + money(breakdown.spawnerValue()));
+        plugin.msg(player, "&7Land Value: &f$" + money(breakdown.totalValue()));
+        plugin.msg(player, "&8  Spawners: &f$" + money(breakdown.spawnerValue()));
+        plugin.msg(player, "&8  Valuable Blocks: &f$" + money(breakdown.blockValue()));
+        plugin.msg(player, "&8  Containers: &f$" + money(breakdown.containerValue()));
         plugin.msg(player, "&7Faction Bank: &f$" + money(bank));
-        plugin.msg(player, "&7Placed Spawners: &f" + breakdown.totalSpawners());
+        plugin.msg(player, "&7Total Spawners: &f" + breakdown.totalSpawners()
+                + " &8(placed " + breakdown.totalPlacedSpawners()
+                + ", stored " + breakdown.totalStoredSpawners() + ")");
         if (breakdown.spawnerCounts().isEmpty()) {
             plugin.msg(player, "&8No valued spawners found in claimed land.");
             return;
