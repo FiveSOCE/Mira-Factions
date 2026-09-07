@@ -44,6 +44,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new MiraSpawnersValueBridge(landValue), this);
             getLogger().info("MiraSpawners FTop land-value bridge enabled.");
         }
+        getServer().getPluginManager().registerEvents(new FTopAssetChangeListener(landValue), this);
         getServer().getPluginManager().registerEvents(new FactionHistoryAliasListener(), this);
         getServer().getPluginManager().registerEvents(historyListener, this);
         getServer().getPluginManager().registerEvents(new FactionHistoryTabListener(), this);
