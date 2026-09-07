@@ -174,6 +174,15 @@ public final class FactionListener implements Listener {
         if (block == null || event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
         TerritoryType territory = service.territoryType(block.getLocation());
+
+        ItemStack hand = event.getItem();
+        if (hand != null && hand.getType() == Material.CREEPER_SPAWN_EGG
+                && (territory == TerritoryType.WILDERNESS || territory == TerritoryType.FACTION)) {
+            // Creeper eggs are a raiding mechanic: permit them in wilderness and normal
+            // faction territory regardless of the clicked block's usual USE permission.
+            return;
+        }
+
         if ((territory == TerritoryType.SAFEZONE || territory == TerritoryType.WARZONE)
                 && isProtectedZoneUtility(block.getType())) {
             return;
