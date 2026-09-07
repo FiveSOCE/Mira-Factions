@@ -132,9 +132,17 @@ public final class ProtectedZoneListener implements Listener {
     public void onInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         Location check = event.getClickedBlock() == null ? player.getLocation() : event.getClickedBlock().getLocation();
+        ItemStack item = event.getItem();
+
+        if (item != null && item.getType() == Material.CREEPER_SPAWN_EGG
+                && protectedZone(check) && !bypass(player)) {
+            event.setCancelled(true);
+            denied(player);
+            return;
+        }
+
         if (!safeZone(check) || bypass(player)) return;
 
-        ItemStack item = event.getItem();
         if (event.getClickedBlock() != null) {
             Material clicked = event.getClickedBlock().getType();
             if (isAllowedUtility(clicked)) return;
