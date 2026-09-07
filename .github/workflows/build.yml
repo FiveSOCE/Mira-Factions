@@ -54,5 +54,5 @@ jobs:
             gh release create "$TAG" "$JAR" \
               --target "${{ github.sha }}" \
               --title "MiraFactions $TAG" \
-              --notes "Fixes missing FTop wealth blocks by reading material SELL values directly from EssentialsX Worth#getPrice at runtime. Placed wealth blocks remain whitelist-only; typed spawners remain valued separately through MiraShop."
+              --notes "Adds persistent native /fa hologram top FTop displays and allows Creeper spawn eggs in Wilderness/normal Faction territory while explicitly blocking them in SafeZone and WarZone."
           fi
