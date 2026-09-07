@@ -1,6 +1,6 @@
-## v0.2.20 protected-zone clear weather
+## v0.2.24 full FTop asset valuation
 
-Players inside SafeZone or WarZone now receive a persistent clear-weather override. Leaving those territories restores normal world weather. The 0.2.19 WarZone falling-block gravity fix remains included.
+FTop now values full claimed assets instead of only placed spawners. Claimed chunks can contribute placed/stored spawners, configured valuable blocks, Essentials-worth materials, chest/barrel contents and nested shulker contents. Live asset changes refresh the affected claim cache, while `/fa top update` performs a complete batched rebuild.
 
 # MiraFactions
 
@@ -8,7 +8,7 @@ MiraFactions is the power, territory, raiding and faction-management system for 
 
 ## Download
 
-[**Download MiraFactions v0.2.20**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.20/MiraFactions-0.2.20.jar)
+[**Download MiraFactions v0.2.24**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.24/MiraFactions-0.2.24.jar)
 
 ## Requirements / Dependencies
 
@@ -128,7 +128,16 @@ MiraFactions includes a faction bank, daily member-dues foundation, claim-rent f
 
 Faction wealth is calculated as:
 
-`Spawner Land Value + Faction Bank = Total Wealth`
+`Claimed Asset Value + Faction Bank = Total Wealth`
+
+Claimed asset value now includes:
+
+- placed MiraSpawners stacks, valued from current MiraShop spawner buy prices
+- typed MiraSpawners items stored inside claimed containers
+- configured valuable blocks placed in faction land
+- priced items stored in chests, barrels and other containers
+- nested shulker-box contents up to the configured nesting depth
+- material values from `ftop.item-values`, falling back to positive EssentialsX `worth.yml` values when available
 
 When MiraSpawners and MiraShop are installed, land value reads actual typed MiraSpawners stacks and their MiraShop buy prices. There is no spawner maturation mechanic.
 
@@ -158,12 +167,14 @@ MiraFactions keeps every SafeZone and WarZone chunk loaded 24/7 using plugin-own
 
 FTop no longer performs automatic full claim scans.
 
-- Passive refresh is silent and only runs when a faction member is standing inside their own faction claim.
-- Passive refresh only scans surrounding chunks that are already loaded and owned by that same faction.
-- `/fa top update` is the explicit administrator full rebuild and is the only FTop path that deliberately loads every faction claim.
-- Cached per-chunk spawner counts persist in `ftop-cache.yml`.
-- MiraShop typed spawner buy prices are received from MiraShop's cached `SpawnerPriceService` and `SpawnerPriceCacheEvent`; MiraFactions no longer reads `shops.yml`.
-- FTop placeholders, `/f top`, history and the podium use cached counts plus the current faction bank balance.
+- Passive discovery is silent and only initializes missing cache entries for already-loaded faction claims.
+- Normal block/container changes refresh only the affected claimed chunk, with debounce to avoid rescan spam.
+- Hopper moves, inventory closes, block place/break and explosions all invalidate the affected asset cache.
+- `/fa top update` is the explicit administrator full rebuild and deliberately scans every faction claim in small batches.
+- Cached per-chunk asset counts persist in `ftop-cache.yml`.
+- MiraShop typed spawner buy prices are received from MiraShop's cached `SpawnerPriceService` and `SpawnerPriceCacheEvent`.
+- FTop placeholders expose total land, spawner, block and container values separately.
+- FTop history, raid-value capture, seasons and the podium all use the same total claimed-asset calculation.
 
 ## Commands
 
