@@ -24,6 +24,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
     private FactionHistoryService history;
     private FactionLandValueService landValue;
     private FactionSeasonService seasons;
+    private FTopHologramService ftopHologram;
 
     @Override
     public void onEnable() {
@@ -36,6 +37,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         history.initializeBanks(factions.all());
         FactionGuiService gui = new FactionGuiService(this, factions);
         FTopPodiumService podium = new FTopPodiumService(this, factions, landValue, seasons);
+        ftopHologram = new FTopHologramService(this, factions, landValue);
 
         FactionHistoryListener historyListener = new FactionHistoryListener(this, factions, history, landValue);
         FactionSeasonListener seasonListener = new FactionSeasonListener(this, factions, landValue, seasons);
@@ -66,7 +68,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         factionCommand.setExecutor(factionExecutor);
         factionCommand.setTabCompleter(factionExecutor);
 
-        FactionAdminCommand adminExecutor = new FactionAdminCommand(this, factions);
+        FactionAdminCommand adminExecutor = new FactionAdminCommand(this, factions, ftopHologram);
         PluginCommand adminCommand = getCommand("factionadmin");
         if (adminCommand == null) throw new IllegalStateException("factionadmin command missing from plugin.yml");
         adminCommand.setExecutor(adminExecutor);
@@ -102,6 +104,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
             for (Player player : Bukkit.getOnlinePlayers()) landValue.refreshLoadedAround(player);
         }, passiveFtopTicks, passiveFtopTicks);
         Bukkit.getScheduler().runTaskTimer(this, landValue::flushIfDirty, 20L * 60L, 20L * 60L);
+        Bukkit.getScheduler().runTaskTimer(this, ftopHologram::refresh, 40L, 20L * 30L);
 
         getLogger().info("MiraFactions v" + getPluginMeta().getVersion() + " enabled with " + factions.all().size() + " faction(s). Season: " + seasons.currentSeason());
     }
@@ -138,4 +141,5 @@ public final class MiraFactionsPlugin extends JavaPlugin {
     public FactionHistoryService history() { return history; }
     public FactionLandValueService landValue() { return landValue; }
     public FactionSeasonService seasons() { return seasons; }
+    public FTopHologramService ftopHologram() { return ftopHologram; }
 }
