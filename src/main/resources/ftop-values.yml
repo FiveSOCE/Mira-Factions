@@ -1,0 +1,38 @@
+# MiraFactions FTop material valuation
+#
+# MiraShop is the primary source of normal block/item values.
+# Spawners continue to use MiraShop's typed spawner buy-price service.
+#
+# source:
+#   BUY  = use MiraShop buy prices (default/recommended for competitive wealth)
+#   SELL = use MiraShop sell prices
+source: BUY
+
+# If true, materials missing from MiraShop may fall back to EssentialsX worth.yml.
+# Recommended false when MiraShop should be the single economy source of truth.
+fallback-to-essentials-worth: false
+
+# These always win over MiraShop prices.
+# Set a material here when you want FTop value to differ from its shop price.
+overrides:
+  # DIAMOND_BLOCK: 25000.0
+  # NETHERITE_BLOCK: 100000.0
+
+# These materials NEVER add FTop value, regardless of MiraShop or override price.
+# SPAWNER is excluded here because typed spawners are valued separately.
+exclude-materials:
+  - AIR
+  - CAVE_AIR
+  - VOID_AIR
+  - WATER
+  - LAVA
+  - BEDROCK
+  - BARRIER
+  - COMMAND_BLOCK
+  - CHAIN_COMMAND_BLOCK
+  - REPEATING_COMMAND_BLOCK
+  - STRUCTURE_BLOCK
+  - STRUCTURE_VOID
+  - JIGSAW
+  - LIGHT
+  - SPAWNER
