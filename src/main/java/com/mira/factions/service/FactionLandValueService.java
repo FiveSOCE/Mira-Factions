@@ -46,6 +46,7 @@ public final class FactionLandValueService {
     private final Map<Material, Double> shopMaterialPrices = new EnumMap<>(Material.class);
     private final Map<Material, Double> materialOverrides = new EnumMap<>(Material.class);
     private final Set<Material> excludedMaterials = EnumSet.noneOf(Material.class);
+    private final Set<Material> placedValueMaterials = EnumSet.noneOf(Material.class);
     private boolean fallbackToEssentialsWorth;
     private String materialPriceSource = "BUY";
     private volatile Map<EntityType, Double> spawnerPrices = Map.of();
@@ -130,6 +131,12 @@ public final class FactionLandValueService {
 
     public boolean isTrackedMaterial(Material material) {
         return material != null && unitPrice(material) > 0D;
+    }
+
+    public boolean isTrackedPlacedMaterial(Material material) {
+        return material != null
+                && placedValueMaterials.contains(material)
+                && unitPrice(material) > 0D;
     }
 
     public void refreshLoadedAround(Player player) {
@@ -336,6 +343,13 @@ public final class FactionLandValueService {
             }
         }
 
+        placedValueMaterials.clear();
+        for (String raw : yaml.getStringList("counted-placed-materials")) {
+            Material material = Material.matchMaterial(raw);
+            if (material != null && material.isBlock()) placedValueMaterials.add(material);
+            else plugin.getLogger().warning("Unknown/non-block FTop placed material in ftop-values.yml: " + raw);
+        }
+
         excludedMaterials.clear();
         for (String raw : yaml.getStringList("exclude-materials")) {
             Material material = Material.matchMaterial(raw);
@@ -343,7 +357,10 @@ public final class FactionLandValueService {
             else plugin.getLogger().warning("Unknown FTop excluded material in ftop-values.yml: " + raw);
         }
 
+        placedValueMaterials.removeAll(excludedMaterials);
+
         plugin.getLogger().info("Loaded FTop value config: source=" + materialPriceSource
+                + ", placed-whitelist=" + placedValueMaterials.size()
                 + ", overrides=" + materialOverrides.size()
                 + ", excluded=" + excludedMaterials.size() + ".");
     }
@@ -413,7 +430,7 @@ public final class FactionLandValueService {
                 for (int z = 0; z < 16; z++) {
                     for (int y = minY; y < maxY; y++) {
                         Material material = world.getBlockAt(baseX + x, y, baseZ + z).getType();
-                        if (isTrackedMaterial(material)) {
+                        if (isTrackedPlacedMaterial(material)) {
                             placedBlocks.merge(material, 1L, Long::sum);
                         }
                     }
