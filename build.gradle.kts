@@ -60,6 +60,7 @@ val downloadMiraSpawnersApi by tasks.registering {
 
 val paperApiVersion = providers.gradleProperty("paperApiVersion").orElse("1.21.11-R0.1-SNAPSHOT")
 val compileJavaVersion = providers.gradleProperty("compileJavaVersion").map(String::toInt).orElse(21)
+val bytecodeJavaVersion = providers.gradleProperty("bytecodeJavaVersion").map(String::toInt).orElse(21)
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:${paperApiVersion.get()}")
@@ -74,7 +75,7 @@ java { toolchain.languageVersion.set(JavaLanguageVersion.of(compileJavaVersion.g
 tasks.withType<JavaCompile>().configureEach {
     dependsOn(downloadMiraShopApi, downloadMiraSpawnersApi)
     options.encoding = "UTF-8"
-    options.release.set(21)
+    options.release.set(bytecodeJavaVersion.get())
 }
 
 tasks.jar { archiveFileName.set("MiraFactions-${project.version}.jar") }
