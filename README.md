@@ -1,3 +1,13 @@
+# MiraFactions
+
+## Download
+
+**Latest compatibility release: v0.2.31**
+
+[**Download MiraFactions-0.2.31.jar**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.31/MiraFactions-0.2.31.jar)
+
+[View all releases](https://github.com/FiveSOCE/Mira-Factions/releases)
+
 ## v0.2.30 FTop hologram and Creeper-egg raiding rules
 
 - `/fa hologram top` creates one persistent native TextDisplay **Faction Top 10** hologram at the administrator's location.
@@ -14,10 +24,6 @@
 # MiraFactions
 
 MiraFactions is the power, territory, raiding and faction-management system for the Mira Paper server suite. It follows the classic FactionsUUID-style gameplay loop while adding faction ranks, granular permissions, diplomacy, economy, TNT, upgrades, zones, seasonal FTop data, protected SafeZone/WarZone territory and integrations with the wider Mira ecosystem.
-
-## Download
-
-[**Download MiraFactions v0.2.30**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.31/MiraFactions-0.2.31.jar)
 
 ## Requirements / Dependencies
 
