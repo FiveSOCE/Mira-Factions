@@ -17,7 +17,7 @@ MiraFactions is the power, territory, raiding and faction-management system for 
 
 ## Download
 
-[**Download MiraFactions v0.2.30**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.30/MiraFactions-0.2.30.jar)
+[**Download MiraFactions v0.2.30**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.31/MiraFactions-0.2.31.jar)
 
 ## Requirements / Dependencies
 
