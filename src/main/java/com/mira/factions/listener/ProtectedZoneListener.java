@@ -5,6 +5,7 @@ import com.mira.factions.model.TerritoryType;
 import com.mira.factions.service.FactionService;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Entity;
@@ -41,11 +42,14 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 
 /**
  * SafeZone is fully protected. WarZone protects terrain only while allowing normal PvP/combat use.
  */
 public final class ProtectedZoneListener implements Listener {
+    private static final NamespacedKey MIRA_NPC_ID_KEY = NamespacedKey.fromString("miranpc:npc_id");
+
     private final MiraFactionsPlugin plugin;
     private final FactionService service;
 
@@ -67,6 +71,12 @@ public final class ProtectedZoneListener implements Listener {
         return player.hasPermission("mirafactions.protectedzone.bypass")
                 || player.hasPermission("mirafactions.bypass")
                 || service.bypass(player.getUniqueId());
+    }
+
+    private boolean miraNpc(Entity entity) {
+        return entity != null
+                && MIRA_NPC_ID_KEY != null
+                && entity.getPersistentDataContainer().has(MIRA_NPC_ID_KEY, PersistentDataType.STRING);
     }
 
     private void denied(Player player) {
@@ -91,7 +101,7 @@ public final class ProtectedZoneListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
-        if (safeZone(event.getLocation())) {
+        if (safeZone(event.getLocation()) && !miraNpc(event.getEntity())) {
             event.setCancelled(true);
             return;
         }
@@ -112,7 +122,7 @@ public final class ProtectedZoneListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onProtectedEntityDamage(EntityDamageByEntityEvent event) {
-        if (!safeZone(event.getEntity().getLocation())) return;
+        if (!safeZone(event.getEntity().getLocation()) || miraNpc(event.getEntity())) return;
         Player player = attackingPlayer(event.getDamager());
         if (player != null && !bypass(player) && !(event.getEntity() instanceof Player)) {
             event.setCancelled(true);
@@ -169,6 +179,7 @@ public final class ProtectedZoneListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInteractEntity(PlayerInteractEntityEvent event) {
+        if (miraNpc(event.getRightClicked())) return;
         if (safeZone(event.getRightClicked().getLocation()) && !bypass(event.getPlayer())) {
             event.setCancelled(true);
             denied(event.getPlayer());
