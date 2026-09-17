@@ -1,339 +1,219 @@
 # MiraFactions
 
-## Download
+Power, territory, raiding and faction-management system for the Mira Paper server suite.
 
-**Latest compatibility release: v0.2.31**
+MiraFactions follows the classic FactionsUUID-style gameplay loop while adding faction ranks, granular permissions, diplomacy, economy, TNT, upgrades, zones, SafeZone/WarZone protection, seasonal FTop data and deep integration with the wider Mira ecosystem.
 
-[**Download MiraFactions-0.2.31.jar**](https://github.com/FiveSOCE/Mira-Factions/releases/download/v0.2.31/MiraFactions-0.2.31.jar)
+## Current Release
 
-[View all releases](https://github.com/FiveSOCE/Mira-Factions/releases)
+**v0.2.33** — compatible with Paper/Minecraft **1.21.11 through 26.2** using Java 21 bytecode.
 
-## v0.2.30 FTop hologram and Creeper-egg raiding rules
+[View releases](https://github.com/FiveSOCE/Mira-Factions/releases)
 
-- `/fa hologram top` creates one persistent native TextDisplay **Faction Top 10** hologram at the administrator's location.
-- The hologram automatically refreshes faction ordering/value and persists its location in `ftop-hologram.yml`.
-- `/fa hologram remove` removes it.
-- Creeper spawn eggs are explicitly allowed in **Wilderness** and ordinary **Faction** territory as a raiding mechanic.
-- Creeper spawn eggs are explicitly denied in **SafeZone** and **WarZone**.
-- The protected-zone rule is enforced both at player interaction and at the actual `SPAWNER_EGG` creature-spawn event, preventing dispenser/alternate activation paths from bypassing it.
+## Requirements / Integrations
 
-## v0.2.25 shared FTop cache fix
-
-`/f top`, `/f value`, FTop history, seasons and `/fa top update` now all use the same shared valuation cache. The full claimed-asset valuation from v0.2.24 remains included.
-
-# MiraFactions
-
-MiraFactions is the power, territory, raiding and faction-management system for the Mira Paper server suite. It follows the classic FactionsUUID-style gameplay loop while adding faction ranks, granular permissions, diplomacy, economy, TNT, upgrades, zones, seasonal FTop data, protected SafeZone/WarZone territory and integrations with the wider Mira ecosystem.
-
-## Requirements / Dependencies
-
-- Paper 1.21.11
+- Paper 1.21.11 through 26.2
 - Java 21
-- Vault
-- A Vault-compatible economy provider
+- Vault + a Vault-compatible economy provider
 - PlaceholderAPI optional
-- MiraFly recommended and required for `/f fly`
-- MiraShop recommended for faction land-value pricing
-- MiraSpawners recommended for typed-spawner faction land value
-- LuckPerms, Essentials, MiraTab and MiraTags are optional integration/soft-dependency targets
+- MiraFly recommended/required for faction flight
+- MiraShop recommended for faction valuation pricing
+- MiraSpawners recommended for typed-spawner valuation
+- MiraNPC optional integration
+- LuckPerms, Essentials, MiraTab and MiraTags optional integrations
 
-## How MiraFactions Works
+## Faction Model
 
-### Factions, ranks and power
+Faction ranks are:
 
-Players create factions and progress through the rank hierarchy `Recruit -> Member -> Officer -> CoLeader -> Leader`. Each faction action has a configurable minimum faction rank rather than requiring a separate Bukkit permission node for every action.
+```text
+Recruit → Member → Officer → CoLeader → Leader
+```
 
-Individual player power defaults to 25 maximum and -10 minimum. Death removes 2 power by default and online faction members regenerate 1 power every 5 minutes. Faction power is the sum of positive member power plus configured/admin power boosts and the faction POWER upgrade, unless an administrator has set a permanent-power override.
+Faction actions are controlled by configurable minimum faction rank rather than requiring a separate Bukkit permission node for every internal action.
 
-A faction's claim capacity is `floor(faction power)`. If a non-peaceful faction owns more chunks than its current claim capacity, it becomes **RAIDABLE**. Enemy factions can overclaim raidable territory when normal protection conditions allow it. Peaceful factions, active server grace and active faction shields prevent the relevant raid/overclaim actions.
+Default player power is bounded and persistent. Faction claim capacity is derived from faction power. When a non-peaceful faction owns more chunks than its current claim capacity it becomes **RAIDABLE**, allowing enemy overclaim mechanics where protection rules permit.
 
-### Claims and territory
+## Claims and Territory
 
-Claims are chunk-based. Normal faction members claim land with `/f claim`, `/f claim radius <radius>` or `/f autoclaim` when their faction rank has the internal `CLAIM` permission. Players can unclaim individual chunks or all faction land when they have `UNCLAIM` access.
+Claims are chunk based.
 
-Administrators can create special territory with `/fa claim safezone`, `/fa claim warzone` and `/fa claim wilderness`. v0.2.14 also adds `/fa claim <Faction> <Amount>`, which force-claims the nearest requested number of chunks around the administrator for the selected faction, and `/fa autoclaim <Faction>`, which claims chunks for that faction as the administrator crosses chunk borders. Admin faction claiming can replace ordinary faction ownership but will not overwrite SafeZone or WarZone chunks.
+Player flows include:
 
-### SafeZone and WarZone protection
+- `/f claim`
+- `/f claim radius <radius>`
+- `/f autoclaim`
+- `/f unclaim`
+- `/f unclaim all`
+- `/f map`
+- `/f seechunk`
 
-SafeZone and WarZone now have deliberately different rules.
+Administrators can manage special territory with SafeZone, WarZone and Wilderness claim tools, plus force-claim/autoclaim support for normal factions.
 
-**SafeZone** remains the strict protected territory:
+## SafeZone and WarZone
 
-- players may open/use chests, trapped chests, barrels, ender chests, anvils and enchanting tables; these utility interactions bypass both the protected-zone interaction filter and the normal faction CONTAINER/USE permission layer in SafeZone/WarZone
+### SafeZone
+
+SafeZone is the strict protected area:
+
 - no normal player damage
-- no projectile launches or combat throwables
-- no hostile potion/area-effect application to protected players
 - no building/breaking
-- no protected entity manipulation
-- no buckets, terrain-changing fluids, pistons, fire or explosion block damage
-- creature spawning remains blocked
+- no hostile projectile/potion behavior
+- no terrain-changing buckets, pistons, fire or explosions
+- normal creature spawning blocked
+- selected utility blocks such as chests, barrels, ender chests, anvils and enchanting tables remain usable
 
-**WarZone** is now a full PvP/combat arena with terrain protection only:
+### WarZone
 
-- players may open/use chests, trapped chests, barrels, ender chests, anvils and enchanting tables
-- player-vs-player damage is allowed
-- melee with any held item or empty hand is allowed
-- bows and crossbows are allowed
-- tridents are allowed
-- ender pearls are allowed
-- snowballs and eggs are allowed
-- splash/lingering potions are allowed
-- wind charges and firework rockets are allowed
-- entity interaction/manipulation is allowed
-- combat-created explosions may damage entities, but cannot destroy WarZone blocks
-- normal creature spawning is allowed
+WarZone is the PvP arena with terrain protection:
 
-WarZone still prevents players or mechanics from changing/damaging the land:
+- PvP allowed
+- melee/projectiles/combat throwables allowed
+- combat explosions may damage entities
+- normal creature spawning allowed
+- terrain placement/breaking and protected block changes remain blocked
 
-- block placement and breaking
-- bucket fill/empty
-- fluid movement across protected terrain
-- pistons moving blocks into/out of WarZone
-- fire/ignition/burning
-- dispenser-driven protected block changes
-- entity-driven block changes
-- hanging-entity placement/breaking
-- explosion block destruction
+Creeper spawn eggs are intentionally allowed in Wilderness and normal faction territory as a raiding mechanic, while SafeZone and WarZone block them.
 
-SafeZone remains the non-combat area. WarZone is the combat area.
+## MiraNPC Protected-Zone Integration — v0.2.32
 
-`mirafactions.protectedzone.bypass`, `mirafactions.bypass`, or the administrator's toggled faction bypass can override applicable protection checks.
+Managed MiraNPC Villagers are explicitly allowed to spawn/restore inside SafeZone and remain clickable there.
 
-### Faction permissions and diplomacy
+This exception applies only to managed MiraNPC entities; normal mobs/entities continue to follow SafeZone protection rules.
 
-Faction permissions are controlled by minimum faction rank and can also expose relation-based access. Default internal faction permissions are:
+## Member Login Notifications — v0.2.33
 
-| Faction permission | Default minimum rank | Purpose |
-| --- | --- | --- |
-| `BUILD` | Member | Place blocks in faction land. |
-| `DESTROY` | Member | Break blocks in faction land. |
-| `CONTAINER` | Member | Access containers. |
-| `USE` | Recruit | General block use/interactions. |
-| `DOOR` | Recruit | Use doors/trapdoors/gates. |
-| `BUTTON` | Recruit | Use buttons. |
-| `LEVER` | Recruit | Use levers. |
-| `PRESSURE_PLATE` | Recruit | Use pressure plates. |
-| `INVITE` | Officer | Invite/manage pending faction invites. |
-| `KICK` | Officer | Kick faction members below the actor's rank. |
-| `BAN` | Officer | Ban/unban players from the faction. |
-| `PROMOTE` | CoLeader | Promote, demote and manage member ranks. |
-| `CLAIM` | Officer | Claim faction territory. |
-| `UNCLAIM` | Officer | Unclaim faction territory. |
-| `SETHOME` | Officer | Set/delete faction home where allowed. |
-| `HOME` | Recruit | Use faction home. |
-| `SETWARP` | Officer | Create/delete faction warps. |
-| `WARP` | Recruit | Use faction warps. |
-| `ECONOMY` | CoLeader | Manage faction economy/bank actions. |
-| `TNT_DEPOSIT` | Recruit | Deposit TNT. |
-| `TNT_WITHDRAW` | Officer | Withdraw TNT. |
-| `FLY` | Member | Use faction-flight entitlement when the FLIGHT upgrade and MiraFly requirements are met. |
-| `SHIELD` | CoLeader | Activate the faction shield. |
-| `UPGRADE` | CoLeader | Purchase faction upgrades. |
-| `VAULT` | Member | Access the faction vault. |
-| `ZONE` | CoLeader | Manage internal faction zones. |
-| `DIPLOMACY` | CoLeader | Manage faction relations. |
-| `ANNOUNCE` | Officer | Send faction announcements. |
-| `DISBAND` | Leader | Disband the faction. |
+Faction-member login/quit notifications now default to **disabled** so MiraCore remains the sole public server join-message authority.
 
-Diplomatic relations are `ALLY`, `TRUCE`, `NEUTRAL` and `ENEMY`. Factions can separately control relation access for supported permissions. Faction chat supports public, faction, ally and truce channels.
+Existing servers can disable the old faction-only chatter with:
 
-### Economy, TNT, upgrades and value
+```yaml
+members:
+  login-notifications: false
+```
 
-MiraFactions includes a faction bank, daily member-dues foundation, claim-rent foundation, TNT storage, shields, faction homes/warps, upgrade levels, configurable internal faction zones and a persistent faction vault.
+then run:
 
-Faction wealth is calculated as:
+```text
+/fa reload
+```
 
-`Claimed Asset Value + Faction Bank = Total Wealth`
+## Economy, TNT and Upgrades
 
-Claimed asset value now includes:
+MiraFactions includes:
 
-- placed MiraSpawners stacks, valued from current MiraShop spawner buy prices
-- typed MiraSpawners items stored inside claimed containers
-- configured valuable blocks placed in faction land
-- priced items stored in chests, barrels and other containers
-- nested shulker-box contents up to the configured nesting depth
-- material values from `ftop.item-values`, falling back to positive EssentialsX `worth.yml` values when available
+- faction bank
+- persistent transaction history
+- member dues foundation
+- TNT storage
+- faction shield system
+- faction homes and warps
+- faction vault
+- configurable upgrades
+- internal faction zones
+- diplomacy/relations
 
-When MiraSpawners and MiraShop are installed, land value reads actual typed MiraSpawners stacks and their MiraShop buy prices. There is no spawner maturation mechanic.
+MiraFly owns actual Bukkit flight state. MiraFactions owns faction-flight entitlement and delegates live flight to MiraFly after checking membership, faction upgrade and internal permissions.
 
-MiraFactions keeps bank/value history and exact raid-value gain/loss records. Seasonal statistics include current/peak wealth, best seasonal FTop rank, raid wins/losses and value gained/lost. FTop data and seasonal records can be shown through commands, the podium GUI and PlaceholderAPI. Persistent data is stored primarily in `plugins/MiraFactions/factions.yml`, `faction-history.yml` and `seasons.yml`.
+## FTop and Valuation
 
-### Faction flight
+Faction wealth is calculated from:
 
-MiraFactions owns faction-flight **entitlement**, while MiraFly owns the live Bukkit flight state. `/f fly` checks faction membership, the faction FLIGHT upgrade, the player's internal faction `FLY` permission and MiraFly availability. MiraFly then controls whether flight can remain active in the player's current territory. This prevents the two plugins from competing over `allowFlight`.
+```text
+Claimed Asset Value + Faction Bank = Total Wealth
+```
 
-MiraFactions v0.2.20 also makes territory/claim-key lookups coordinate-only, so checking a claim or WarZone no longer calls `Location#getChunk()` and cannot synchronously generate terrain.
+Claimed asset valuation can include:
 
-## WarZone falling-block gravity fix
+- placed MiraSpawners stacks
+- typed spawner items in containers
+- configured valuable blocks
+- priced items in containers
+- nested shulker contents up to configured depth
+- Essentials `worth.yml` fallback values where applicable
 
-MiraFactions v0.2.20 allows natural `FallingBlock` entity changes in WarZone. This restores vanilla sand, gravel and concrete-powder gravity while keeping SafeZone fully protected and preserving other WarZone terrain protections.
+FTop uses a shared persistent per-chunk cache. Normal block/container changes invalidate only affected chunks; `/fa top update` performs the deliberate full rebuild.
 
-## Always-loaded SafeZone and WarZone chunks
+A persistent native FTop TextDisplay can be created with:
 
-MiraFactions keeps every SafeZone and WarZone chunk loaded 24/7 using plugin-owned chunk tickets.
+```text
+/fa hologram top
+```
 
-- Existing SafeZone/WarZone claims are restored from `factions.yml` and loaded asynchronously on startup.
-- Changing a special claim immediately adds or removes the MiraFactions chunk ticket.
-- MiraFactions only removes its own tickets on shutdown.
-- Normal faction claims and Wilderness are not kept loaded by this system.
-- This guarantees MiraAirdrops can safely sample the full loaded WarZone footprint without triggering synchronous terrain generation during an event.
+and removed with:
 
-## FTop cache behavior
+```text
+/fa hologram remove
+```
 
-FTop no longer performs automatic full claim scans.
+## Relations and Chat
 
-- Passive discovery is silent and only initializes missing cache entries for already-loaded faction claims.
-- Normal block/container changes refresh only the affected claimed chunk, with debounce to avoid rescan spam.
-- Hopper moves, inventory closes, block place/break and explosions all invalidate the affected asset cache.
-- `/fa top update` is the explicit administrator full rebuild and deliberately scans every faction claim in small batches.
-- Cached per-chunk asset counts persist in `ftop-cache.yml`.
-- MiraShop typed spawner buy prices are received from MiraShop's cached `SpawnerPriceService` and `SpawnerPriceCacheEvent`.
-- FTop placeholders expose total land, spawner, block and container values separately.
-- FTop history, raid-value capture, seasons and the podium all use the same total claimed-asset calculation.
+Supported relations:
 
-## Commands
+```text
+ALLY
+TRUCE
+NEUTRAL
+ENEMY
+```
 
-All normal `/f` commands require the Bukkit permission `mirafactions.use`. Individual faction-management actions are additionally controlled by the faction's internal rank/permission settings described above.
+Faction chat supports public, faction, ally and truce channels. Relations can also participate in configured territory permissions.
 
-### Player / faction commands
+## Common Player Commands
 
-| Command | What it does |
+| Command | Purpose |
 | --- | --- |
-| `/f help [page]` | Shows faction command help. |
-| `/f create <name>` | Creates a faction and makes the creator Leader. |
-| `/f invite <player>` | Invites a player to the faction. |
-| `/f invite list` | Lists pending faction invites. |
-| `/f invite clear` | Clears all pending invites. |
-| `/f invite revoke <player>` | Revokes a pending invite. |
-| `/f join <faction>` | Joins an open faction or a faction for which the player has a valid invite. |
-| `/f leave` | Leaves the current faction; single-member non-permanent factions may disband through this flow. |
-| `/f disband` | Disbands the faction when the player has `DISBAND` access. |
-| `/f kick <player>` | Kicks a lower-ranked faction member. |
-| `/f ban <player>` | Bans a player from the faction. |
-| `/f unban <player>` | Removes a faction ban. |
-| `/f bans` | Lists faction bans. |
-| `/f promote <player>` | Promotes a faction member subject to rank hierarchy rules. |
-| `/f demote <player>` | Demotes a faction member subject to rank hierarchy rules. |
-| `/f role <player> <recruit|member|officer|coleader>` | Assigns a non-Leader faction rank directly when permitted. |
-| `/f transfer <player>` | Transfers faction leadership to another member. |
-| `/f claim` | Claims the current chunk for the player's faction. |
-| `/f claim radius <radius>` | Attempts to claim a square radius of chunks around the player, capped by configuration and faction power. |
-| `/f auto` / `/f autoclaim` | Toggles normal faction autoclaim as the player crosses chunk borders. |
-| `/f unclaim` | Unclaims the current faction-owned chunk. |
-| `/f unclaim all` | Removes all claims owned by the player's faction. |
-| `/f map` | Displays a text territory map around the player. |
-| `/f seechunk` / `/f sc` | Toggles visible particle chunk boundaries. |
-| `/f sethome` | Sets the faction home inside owned territory. |
-| `/f delhome` | Deletes the faction home. |
-| `/f home` | Teleports to the faction home using configured warmup/cooldown rules. |
-| `/f setwarp <name>` | Creates a named faction warp. |
-| `/f delwarp <name>` | Deletes a faction warp. |
-| `/f warp <name>` | Teleports to a faction warp. |
-| `/f warps` | Lists faction warps and current warp-slot usage. |
-| `/f chat [public|faction|ally|truce]` | Changes the player's chat channel; without an argument it toggles faction/public chat. |
-| `/f c [mode]` | Alias for `/f chat`. |
-| `/f ally <faction>` | Requests/sets an Ally relation through diplomacy rules. |
-| `/f truce <faction>` | Requests/sets a Truce relation. |
-| `/f enemy <faction>` | Sets Enemy relation where allowed. |
-| `/f neutral <faction>` | Returns the relation toward Neutral where allowed. |
-| `/f power [player]` | Shows player power and, when applicable, faction power/claim capacity and RAIDABLE/PROTECTED state. |
-| `/f info [faction]` | Shows detailed faction information. |
-| `/f show [faction]` | Alias for `/f info`. |
-| `/f status [faction]` | Alias for `/f info`. |
-| `/f set tag <name>` | Renames the faction when the player has the required leadership access. |
-| `/f set name <name>` | Alias for the faction rename flow. |
-| `/f set description <text>` | Changes the faction description. |
-| `/f set link <text|url>` | Changes the faction link/text field. |
-| `/f set open <true|false>` | Changes whether players can join without an invite. |
-| `/f set title <player> <title|clear>` | Sets or clears a member title. |
-| `/f set dues <amount>` | Sets daily member dues; Leader-only in the current implementation. |
-| `/f perms` / `/f permissions` | Opens the faction rank-first permission GUI. Legacy direct permission/relation subcommands remain available. |
-| `/f perms relation <permission> <ally|truce|neutral|enemy> <allow|deny>` | Controls relation-based access for a faction permission. |
-| `/f money` / `/f bank` | Views/manages faction-bank functions according to faction economy permissions. |
-| `/f money history [page]` | Shows persistent faction bank transaction history. |
-| `/f tnt` | Views/deposits/withdraws faction TNT according to TNT permissions. |
-| `/f shield` | Opens the faction shield control/status GUI. Activation is blocked while the faction is raidable. |
-| `/f fly` | Delegates faction flight to MiraFly after entitlement checks. |
-| `/f upgrades` / `/f upgrade` | Opens the faction upgrade GUI. |
-| `/f vault` / `/f fvault` | Opens the faction vault. |
-| `/f zone` / `/f zones` | Creates/manages internal faction zones, greetings and zone-specific permissions. |
-| `/f near` | Shows nearby faction members within the configured radius. |
-| `/f coords` | Shows faction/member coordinate information provided by the command implementation. |
-| `/f announce <message>` | Sends a faction announcement when the player has `ANNOUNCE` access. |
-| `/f stuck` | Searches nearby chunks for Wilderness and teleports the player out when a suitable location is found. |
-| `/f top` | Shows FTop ranking information. |
-| `/f top gui` | Opens the FTop podium GUI. |
-| `/f value` | Shows faction wealth/value information. |
-| `/f value history [page]` | Shows persistent faction-value history. |
-| `/f log [page]` | Shows the persistent faction audit log. |
-| `/f audit [page]` | Alias/view for faction audit history. |
-| `/f season [faction]` | Shows seasonal statistics for the player's or selected faction. |
-| `/f podium` | Opens the seasonal/FTop podium display. |
+| `/f create <name>` | Creates a faction. |
+| `/f invite <player>` | Invites a player. |
+| `/f join <faction>` | Joins an eligible faction. |
+| `/f leave` | Leaves the current faction. |
+| `/f disband` | Disbands the faction when permitted. |
+| `/f kick <player>` | Removes a lower-ranked member. |
+| `/f promote <player>` / `/f demote <player>` | Changes member rank. |
+| `/f transfer <player>` | Transfers leadership. |
+| `/f claim` / `/f unclaim` | Manages territory. |
+| `/f home` / `/f sethome` | Uses/manages faction home. |
+| `/f warp <name>` / `/f setwarp <name>` | Uses/manages faction warps. |
+| `/f chat [mode]` | Changes faction chat channel. |
+| `/f ally|truce|enemy|neutral <faction>` | Manages relations. |
+| `/f power [player]` | Shows player/faction power state. |
+| `/f info [faction]` | Shows faction information. |
+| `/f perms` | Opens faction permission management. |
+| `/f money` | Faction bank/economy flow. |
+| `/f tnt` | Faction TNT storage. |
+| `/f shield` | Shield control/status. |
+| `/f fly` | Requests faction flight through MiraFly. |
+| `/f upgrades` | Opens faction upgrades. |
+| `/f vault` | Opens the faction vault. |
+| `/f zone` | Manages internal faction zones. |
 
-### Administrator commands
+Normal `/f` use requires `mirafactions.use`; individual actions are additionally governed by faction rank/internal permission configuration.
 
-All `/fa` commands require `mirafactions.admin`. Aliases for `/fa` are `/fadmin` and `/factionadmin`.
+## Administration
 
-| Command | What it does |
-| --- | --- |
-| `/fa help [page]` | Shows administrator help. |
-| `/fa reload` | Reloads MiraFactions configuration. |
-| `/fa save` | Forces faction data to disk. |
-| `/fa bypass` | Toggles the administrator's runtime faction-territory bypass. |
-| `/fa chatspy` / `/fa spy` | Toggles faction chat spying for the administrator. |
-| `/fa info <faction>` | Shows administrative faction details, UUID, members, claims, power, bank, TNT, flags and shield state. |
-| `/fa power <set|add> <player> <amount>` | Sets or adds individual player power. |
-| `/fa powerboost <set|add> <faction> <amount>` | Sets/adds the faction's power boost. |
-| `/fa permanentpower set <faction> <amount>` | Sets a permanent faction-power override. |
-| `/fa permanentpower clear <faction>` | Clears the permanent power override. |
-| `/fa disband <faction>` | Force-disbands a faction. |
-| `/fa forcejoin <player> <faction>` | Moves an online player into the selected faction. |
-| `/fa forcekick <player>` | Force-removes an online player from their faction. |
-| `/fa forcerole <player> <recruit|member|officer|coleader|leader>` | Force-sets a member's faction rank. |
-| `/fa forcehome <player> <faction>` | Teleports an online player to the selected faction's home. |
-| `/fa rename <faction> <newName>` | Force-renames a faction. |
-| `/fa claim safezone` | Converts the current chunk to SafeZone. |
-| `/fa claim warzone` | Converts the current chunk to WarZone. |
-| `/fa claim wilderness` | Removes special/faction ownership from the current chunk and makes it Wilderness. |
-| `/fa claim <Faction> <Amount>` | Force-claims 1-10,000 nearby chunks for the selected faction. Ordinary faction claims may be replaced, but SafeZone/WarZone are never overwritten. |
-| `/fa autoclaim <Faction>` | Enables admin autoclaim for a selected faction and claims chunks as the administrator crosses boundaries. Running it again for the same faction toggles it off. |\n| `/fa autoclaim safezone` | Converts the current chunk to SafeZone immediately, then automatically converts each newly entered chunk to SafeZone. Run it again or use `off` to disable. |\n| `/fa autoclaim warzone` | Converts the current chunk to WarZone immediately, then automatically converts each newly entered chunk to WarZone. Run it again or use `off` to disable. |
-| `/fa autoclaim off` | Disables any active admin faction, SafeZone or WarZone autoclaim mode. |
-| `/fa grace status` | Shows whether server grace is active. |
-| `/fa grace start <minutes>` | Starts server grace for the specified duration. |
-| `/fa grace stop` | Stops server grace. |
-| `/fa peaceful <faction>` | Toggles the faction's peaceful flag. |
-| `/fa permanent <faction>` | Toggles the faction's permanent flag. |
-| `/fa rentexempt <faction>` | Toggles rent exemption for a faction. |
-| `/fa money <set|add> <faction> <amount>` | Sets or adds faction bank balance. |
-| `/fa tnt <set|add> <faction> <amount>` | Sets or adds faction TNT balance. |
-| `/fa shield clear <faction>` | Clears the faction's currently active shield while leaving cooldown state intact. |
-| `/fa shield reset <faction>` | Clears both active shield and shield cooldown state. |
-| `/fa upgrade <set|add> <faction> <upgrade> <level>` | Force-sets or adds an upgrade level, clamped to that upgrade's valid range. |
+`/fa` provides administrative tools for territory, factions, power, FTop cache rebuilds, special-zone management, holograms and diagnostics.
 
-## Permissions
+Global bypass permissions include:
 
-These are Bukkit/server permission nodes. Faction-rank permissions listed earlier are separate internal faction permissions configurable by faction leadership.
+```text
+mirafactions.bypass
+mirafactions.protectedzone.bypass
+```
 
-| Permission | Default | What it does |
-| --- | --- | --- |
-| `mirafactions.use` | Everyone | Allows the normal `/f`, `/faction` and `/factions` command surface. |
-| `mirafactions.admin` | OP | Allows `/fa` administration, force-management and admin claim tools. |
-| `mirafactions.bypass` | OP | Bypasses normal faction territory protection and is also accepted by protected-zone checks. |
-| `mirafactions.protectedzone.bypass` | OP | Bypasses SafeZone/WarZone item/projectile restrictions and SafeZone damage protection. |
+## Persistence
 
+Primary data files live under:
 
-## MiraCosmetics Integration (0.2.14)
+```text
+plugins/MiraFactions/
+```
 
-Integrates approved faction visuals with MiraCosmetics for claim, unclaim, SafeZone/WarZone entry, faction creation, upgrades and disband while keeping MiraCosmetics optional and authoritative for particles.
+including faction state, history, seasons, FTop cache and hologram state.
 
-## Faction Control GUIs and Warmup Upgrades (0.2.15)
+## Building
 
-v0.2.20 adds GUI-first control for faction permissions and shields while keeping the existing faction data model as the single authority.
+```bash
+gradle clean build
+```
 
-- `/f permissions` opens a rank-first permission editor backed by the faction's existing minimum-rank permission thresholds.
-- permission reset restores the normal MiraFactions defaults rather than creating a second permissions store.
-- `/f shield` opens a status/activation GUI showing upgrade level, active duration and cooldown state.
-- shield activation is refused while the faction is currently raidable.
-- the upgrade GUI now includes functional **Home Warmup** and **Warp Warmup** upgrades.
-- each warmup level reduces the configured faction teleport warmup without creating a second teleport system.
-- upgrade entries expose clearer category/current-effect/next-effect information.
+The output JAR is created in `build/libs/`.
