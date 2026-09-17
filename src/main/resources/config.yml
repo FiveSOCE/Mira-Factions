@@ -73,7 +73,7 @@ seechunk:
   particle: "END_ROD"
 
 members:
-  login-notifications: true
+  login-notifications: false
 
 chat:
   public-faction-tag: true
