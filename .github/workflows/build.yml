@@ -56,18 +56,18 @@ jobs:
         run: gradle clean test build -PpaperApiVersion=1.21.11-R0.1-SNAPSHOT -PcompileJavaVersion=21 -PbytecodeJavaVersion=21 --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: MiraFactions-0.2.32
-          path: build/libs/MiraFactions-0.2.32.jar
+          name: MiraFactions-0.2.33
+          path: build/libs/MiraFactions-0.2.33.jar
           if-no-files-found: error
       - name: Publish release
         if: success() && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="v0.2.32"
-          JAR="build/libs/MiraFactions-0.2.32.jar"
+          TAG="v0.2.33"
+          JAR="build/libs/MiraFactions-0.2.33.jar"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$JAR" --clobber
           else
-            gh release create "$TAG" "$JAR" --target "${{ github.sha }}" --title "MiraFactions v0.2.32" --notes "Adds MiraNPC protected-zone integration. Managed MiraNPC villagers can spawn/restore inside SafeZone and remain clickable there, while normal mobs and entities stay blocked by SafeZone protection."
+            gh release create "$TAG" "$JAR" --target "${{ github.sha }}" --title "MiraFactions v0.2.33" --notes "Disables faction member login/quit notifications by default so MiraCore remains the sole public join-message owner. Existing servers can disable the old faction notification with members.login-notifications: false and /fa reload."
           fi
