@@ -66,14 +66,11 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:${paperApiVersion.get()}")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
     compileOnly("me.clip:placeholderapi:2.11.6")
-    compileOnly(files(miraShopJar))
-    compileOnly(files(miraSpawnersJar))
 }
 
 java { toolchain.languageVersion.set(JavaLanguageVersion.of(compileJavaVersion.get())) }
 
 tasks.withType<JavaCompile>().configureEach {
-    dependsOn(downloadMiraShopApi, downloadMiraSpawnersApi)
     options.encoding = "UTF-8"
     options.release.set(bytecodeJavaVersion.get())
 }
