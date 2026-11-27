@@ -8,8 +8,8 @@ MiraFactions follows the classic FactionsUUID-style gameplay loop while adding f
 
 | Server | Java | Final JAR | Release |
 | --- | --- | --- | --- |
-| Paper **1.18.2** | 17 | `MiraFactions_1.18.2.jar` | [Legacy development release](https://github.com/FiveSOCE/Mira-Factions/releases/tag/dev-1.18.2) |
-| Paper **1.21.11–26.2** | 21 baseline; 26.2 server uses Java 25 | `MiraFactions_1.21.11-26.2.jar` | [Modern release](https://github.com/FiveSOCE/Mira-Factions/releases/tag/compat-modern-1.21.11-26.2) |
+| Paper **1.18.2** | 17 | `MiraFactions_1.18.2.jar` | [Download 1.18.2 JAR](https://github.com/FiveSOCE/Mira-Factions/releases/download/dev-1.18.2/MiraFactions_1.18.2.jar) |
+| Paper **1.21.11–26.2** | 21 baseline; 26.2 server uses Java 25 | `MiraFactions_1.21.11-26.2.jar` | [Download modern JAR](https://github.com/FiveSOCE/Mira-Factions/releases/download/compat-modern-1.21.11-26.2/MiraFactions_1.21.11-26.2.jar) |
 
 The 1.18.2 Java 17 port uses legacy armour-stand FTop holograms in place of post-1.18 TextDisplay entities. Modern plugin pricing/spawner integrations use version-neutral adapters. Both builds still require live gameplay validation and we have not yet verified every 1.19–1.21.10 release.
 
