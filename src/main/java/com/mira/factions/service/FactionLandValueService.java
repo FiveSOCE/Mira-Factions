@@ -2,8 +2,6 @@ package com.mira.factions.service;
 
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.model.Faction;
-import com.mira.shop.api.SpawnerPriceService;
-import com.mira.shop.api.MaterialPriceService;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -302,33 +300,52 @@ public final class FactionLandValueService {
     }
 
     public void refreshSpawnerPricesFromService() {
-        SpawnerPriceService service = Bukkit.getServicesManager().load(SpawnerPriceService.class);
-        if (service != null) updateSpawnerPrices(service.buyPrices());
+        Map<?, ?> prices = servicePrices("com.mira.shop.api.SpawnerPriceService", "buyPrices");
+        if (prices == null) return;
+        Map<EntityType, Double> validated = new EnumMap<>(EntityType.class);
+        for (Map.Entry<?, ?> entry : prices.entrySet()) {
+            if (entry.getKey() instanceof EntityType type && entry.getValue() instanceof Number number) {
+                validated.put(type, number.doubleValue());
+            }
+        }
+        updateSpawnerPrices(validated);
     }
 
     public void refreshMaterialPricesFromService() {
         shopMaterialPrices.clear();
-        MaterialPriceService service = Bukkit.getServicesManager().load(MaterialPriceService.class);
-        if (service == null) {
+        Map<?, ?> source = servicePrices("com.mira.shop.api.MaterialPriceService",
+                materialPriceSource.equals("SELL") ? "sellPrices" : "buyPrices");
+        if (source == null) {
             plugin.getLogger().warning("MiraShop MaterialPriceService unavailable; FTop normal material values will use overrides"
                     + (fallbackToEssentialsWorth ? " / Essentials fallback." : " only."));
             return;
         }
 
-        Map<Material, Double> source = materialPriceSource.equals("SELL")
-                ? service.sellPrices()
-                : service.buyPrices();
-
-        for (Map.Entry<Material, Double> entry : source.entrySet()) {
-            Material material = entry.getKey();
-            Double value = entry.getValue();
-            if (material != null && value != null && Double.isFinite(value) && value >= 0D) {
-                shopMaterialPrices.put(material, value);
-            }
+        for (Map.Entry<?, ?> entry : source.entrySet()) {
+            if (!(entry.getKey() instanceof Material material) || !(entry.getValue() instanceof Number number)) continue;
+            double value = number.doubleValue();
+            if (Double.isFinite(value) && value >= 0D) shopMaterialPrices.put(material, value);
         }
 
         plugin.getLogger().info("Loaded " + shopMaterialPrices.size()
                 + " MiraShop " + materialPriceSource + " material price(s) for FTop.");
+    }
+
+    /** Version-neutral service bridge. Do not resolve modern MiraShop API classes when absent. */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Map<?, ?> servicePrices(String className, String methodName) {
+        org.bukkit.plugin.Plugin shop = Bukkit.getPluginManager().getPlugin("MiraShop");
+        if (shop == null || !shop.isEnabled()) return null;
+        try {
+            Class<?> type = Class.forName(className, false, shop.getClass().getClassLoader());
+            Object service = Bukkit.getServicesManager().load((Class) type);
+            if (service == null) return null;
+            Object raw = type.getMethod(methodName).invoke(service);
+            return raw instanceof Map<?, ?> map ? map : null;
+        } catch (ReflectiveOperationException | LinkageError ex) {
+            plugin.getLogger().warning("MiraShop integration not compatible: " + ex.getMessage());
+            return null;
+        }
     }
 
     private void loadValueConfig() {
