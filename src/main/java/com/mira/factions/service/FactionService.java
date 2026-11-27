@@ -410,7 +410,7 @@ public final class FactionService {
         Chunk center = player.getLocation().getChunk();
         for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
-                Location location = new Location(player.getWorld(), (center.getX() + x) * 16.0, player.getY(), (center.getZ() + z) * 16.0);
+                Location location = new Location(player.getWorld(), (center.getX() + x) * 16.0, player.getLocation().getY(), (center.getZ() + z) * 16.0);
                 if (claim(player, location).success()) success++;
             }
         }
@@ -931,7 +931,7 @@ public final class FactionService {
         for (int z = -radius; z <= radius; z++) {
             for (int x = -radius; x <= radius; x++) {
                 if (x == 0 && z == 0) { out.append("&f+"); continue; }
-                Location loc = new Location(viewer.getWorld(), (center.getX() + x) * 16.0, viewer.getY(), (center.getZ() + z) * 16.0);
+                Location loc = new Location(viewer.getWorld(), (center.getX() + x) * 16.0, viewer.getLocation().getY(), (center.getZ() + z) * 16.0);
                 TerritoryType type = territoryType(loc);
                 if (type == TerritoryType.SAFEZONE) { out.append("&aS"); continue; }
                 if (type == TerritoryType.WARZONE) { out.append("&cW"); continue; }
@@ -983,7 +983,7 @@ public final class FactionService {
         if (!seeChunk(player.getUniqueId()) || !player.isOnline()) return;
         Chunk chunk = player.getLocation().getChunk();
         World world = player.getWorld();
-        double y = Math.max(world.getMinHeight() + 1, player.getY());
+        double y = Math.max(world.getMinHeight() + 1, player.getLocation().getY());
         Particle particle = Particle.valueOf(plugin.getConfig().getString("seechunk.particle", "END_ROD").toUpperCase(Locale.ROOT));
         for (int i = 0; i <= 16; i += 2) {
             world.spawnParticle(particle, chunk.getX() * 16 + i, y, chunk.getZ() * 16, 1, 0, 0, 0, 0);
