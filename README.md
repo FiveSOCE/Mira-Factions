@@ -8,10 +8,10 @@ MiraFactions follows the classic FactionsUUID-style gameplay loop while adding f
 
 | Server target | Java | Final JAR name | Download |
 | --- | --- | --- | --- |
-| **Paper 1.18.2** | 17 | `MiraFactions_1.18.2.jar` | [Legacy release](https://github.com/FiveSOCE/Mira-Factions/releases/tag/dev-1.18.2) |
-| **Paper 1.21.11–26.2** | 21 baseline; modern server may require Java 25 | `MiraFactions_1.21.11-26.2.jar` | [Modern release](https://github.com/FiveSOCE/Mira-Factions/releases/tag/compat-modern-1.21.11-26.2) |
+| **Paper 1.18.2** | 17 | `MiraFactions_1.18.2.jar` | [Download 1.18.2 JAR](https://github.com/FiveSOCE/Mira-Factions/releases/download/dev-1.18.2/MiraFactions_1.18.2.jar) |
+| **Paper 1.21.11–26.2** | 21 baseline; modern server may require Java 25 | `MiraFactions_1.21.11-26.2.jar` | [Download modern JAR](https://github.com/FiveSOCE/Mira-Factions/releases/download/compat-modern-1.21.11-26.2/MiraFactions_1.21.11-26.2.jar) |
 
-The 1.18.2 compatibility branch is undergoing compilation and integration testing; **do not assume it has a published JAR before checking the release assets**. The modern binary is compiled against Paper 1.21.11 and checked against 26.2. Compatibility with intermediate versions 1.19–1.21.10 is **not yet verified**.
+Both versioned JARs have passed their respective GitHub Actions compilation checks and are available as verified GitHub release assets. In-game integration and functionality testing remains outstanding. The modern binary is compiled against Paper 1.21.11 and checked against 26.2. Compatibility with intermediate versions 1.19–1.21.10 is **not yet verified**.
 
 [Legacy source](https://github.com/FiveSOCE/Mira-Factions/tree/compat/1.18.2) · [Modern source](https://github.com/FiveSOCE/Mira-Factions) · [All releases](https://github.com/FiveSOCE/Mira-Factions/releases)
 
