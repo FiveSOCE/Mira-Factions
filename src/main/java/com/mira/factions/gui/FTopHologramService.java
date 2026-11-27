@@ -8,8 +8,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Display;
-import org.bukkit.entity.TextDisplay;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.ChatColor;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,7 +44,7 @@ public final class FTopHologramService {
         boolean existed = location != null || !entities().isEmpty();
         location = null;
         if (file.isFile()) file.delete();
-        entities().forEach(TextDisplay::remove);
+        entities().forEach(ArmorStand::remove);
         return existed;
     }
 
@@ -52,24 +52,26 @@ public final class FTopHologramService {
         if (location == null || location.getWorld() == null) return;
 
         List<String> lines = lines();
-        List<TextDisplay> displays = entities();
-        while (displays.size() > lines.size()) displays.removeLast().remove();
+        List<ArmorStand> displays = entities();
+        while (displays.size() > lines.size()) displays.remove(displays.size() - 1).remove();
 
         double spacing = 0.30D;
         for (int i = 0; i < lines.size(); i++) {
-            TextDisplay display;
+            ArmorStand display;
             if (i < displays.size()) display = displays.get(i);
             else {
-                display = location.getWorld().spawn(location, TextDisplay.class);
+                display = location.getWorld().spawn(location, ArmorStand.class);
                 display.addScoreboardTag(TAG);
-                display.setBillboard(Display.Billboard.CENTER);
-                display.setSeeThrough(true);
-                display.setShadowed(true);
+                display.setInvisible(true);
+                display.setMarker(true);
+                display.setSmall(true);
+                display.setGravity(false);
+                display.setCustomNameVisible(true);
                 display.setPersistent(true);
                 displays.add(display);
             }
             display.teleport(location.clone().add(0, (lines.size() - 1 - i) * spacing, 0));
-            display.text(plugin.component(lines.get(i)));
+            display.setCustomName(ChatColor.translateAlternateColorCodes('&', lines.get(i)));
         }
     }
 
@@ -94,14 +96,14 @@ public final class FTopHologramService {
         return out;
     }
 
-    private List<TextDisplay> entities() {
-        List<TextDisplay> out = new ArrayList<>();
+    private List<ArmorStand> entities() {
+        List<ArmorStand> out = new ArrayList<>();
         for (World world : Bukkit.getWorlds()) {
-            for (TextDisplay display : world.getEntitiesByClass(TextDisplay.class)) {
+            for (ArmorStand display : world.getEntitiesByClass(ArmorStand.class)) {
                 if (display.getScoreboardTags().contains(TAG)) out.add(display);
             }
         }
-        out.sort(Comparator.comparingDouble(TextDisplay::getY).reversed());
+        out.sort(Comparator.comparingDouble(ArmorStand::getY).reversed());
         return out;
     }
 
