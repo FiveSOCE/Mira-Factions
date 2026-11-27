@@ -97,7 +97,7 @@ public final class AdminFactionClaimListener implements Listener {
                     Location location = new Location(
                             player.getWorld(),
                             (center.getX() + dx) * 16.0,
-                            player.getY(),
+                            player.getLocation().getY(),
                             (center.getZ() + dz) * 16.0
                     );
 
