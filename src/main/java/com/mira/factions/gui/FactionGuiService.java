@@ -291,7 +291,7 @@ public final class FactionGuiService {
     private ItemStack lockedSlot() {
         ItemStack item = item(Material.BARRIER, "&cLocked Vault Slot",
                 List.of("&7Purchase the Vault upgrade", "&7with &f/f upgrades&7."));
-        item.editMeta(meta -> meta.setEnchantmentGlintOverride(true));
+        // The 1.18.2 API has no glint override. Keep the locked slot visible.
         return item;
     }
 
