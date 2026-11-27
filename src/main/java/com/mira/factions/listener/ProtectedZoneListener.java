@@ -208,7 +208,7 @@ public final class ProtectedZoneListener implements Listener {
             case BOW, CROSSBOW, TRIDENT,
                     SNOWBALL, EGG, ENDER_PEARL, EXPERIENCE_BOTTLE,
                     SPLASH_POTION, LINGERING_POTION, FIREWORK_ROCKET,
-                    WIND_CHARGE, END_CRYSTAL, RESPAWN_ANCHOR -> true;
+                    END_CRYSTAL, RESPAWN_ANCHOR -> true;
             default -> false;
         };
     }
