@@ -1,0 +1,43 @@
+name: Build MiraFactions Paper 1.18.2
+on:
+  push:
+    branches: ['compat/1.18.2']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  legacy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
+      - name: Compile and test Paper 1.18.2
+        run: gradle clean build --no-daemon --stacktrace
+      - name: Verify legacy JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR=build/libs/MiraFactions_1.18.2.jar
+          test -s "$JAR"
+          jar tf "$JAR" | grep -Fx plugin.yml
+          jar tf "$JAR" | grep -Fx com/mira/factions/MiraFactionsPlugin.class
+          javap -verbose -classpath "$JAR" com.mira.factions.MiraFactionsPlugin | grep -F 'major version: 61'
+          unzip -p "$JAR" plugin.yml | grep -F "api-version: '1.18'"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MiraFactions_1.18.2
+          path: build/libs/MiraFactions_1.18.2.jar
+          if-no-files-found: error
+      - name: Publish legacy prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view dev-1.18.2 >/dev/null 2>&1 || gh release create dev-1.18.2 --prerelease --title 'MiraFactions Paper 1.18.2 development' --notes 'Paper 1.18.2/Java 17 compatibility target. Requires Vault and a working economy provider. In-game feature parity testing still required.' --target "$GITHUB_SHA"
+          gh release upload dev-1.18.2 build/libs/MiraFactions_1.18.2.jar --clobber
