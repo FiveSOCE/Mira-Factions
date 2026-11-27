@@ -44,7 +44,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         FactionSeasonListener seasonListener = new FactionSeasonListener(this, factions, landValue, seasons);
         installMiraShopPriceBridge();
         if (getServer().getPluginManager().isPluginEnabled("MiraSpawners")) {
-            getServer().getPluginManager().registerEvents(new MiraSpawnersValueBridge(landValue), this);
+            getServer().getPluginManager().registerEvents(new MiraSpawnersValueBridge(this, landValue), this);
             getLogger().info("MiraSpawners FTop land-value bridge enabled.");
         }
         getServer().getPluginManager().registerEvents(new FTopAssetChangeListener(landValue), this);
