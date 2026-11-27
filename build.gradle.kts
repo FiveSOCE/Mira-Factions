@@ -78,7 +78,7 @@ tasks.withType<JavaCompile>().configureEach {
     options.release.set(bytecodeJavaVersion.get())
 }
 
-tasks.jar { archiveFileName.set("MiraFactions-${project.version}.jar") }
+tasks.jar { archiveFileName.set("MiraFactions_1.21.11-26.2.jar") }
 
 tasks.processResources {
     filesMatching("plugin.yml") { expand("version" to project.version) }
