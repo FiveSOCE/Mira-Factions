@@ -4,23 +4,36 @@ Power, territory, raiding and faction-management system for the Mira Paper serve
 
 MiraFactions follows the classic FactionsUUID-style gameplay loop while adding faction ranks, granular permissions, diplomacy, economy, TNT, upgrades, zones, SafeZone/WarZone protection, seasonal FTop data and deep integration with the wider Mira ecosystem.
 
-## Current Release
+## Version-specific downloads
 
-**v0.2.33** — compatible with Paper/Minecraft **1.21.11 through 26.2** using Java 21 bytecode.
+| Server | Java | Final JAR | Release |
+| --- | --- | --- | --- |
+| Paper **1.18.2** | 17 | `MiraFactions_1.18.2.jar` | [Legacy development release](https://github.com/FiveSOCE/Mira-Factions/releases/tag/dev-1.18.2) |
+| Paper **1.21.11–26.2** | 21 baseline; 26.2 server uses Java 25 | `MiraFactions_1.21.11-26.2.jar` | [Modern release](https://github.com/FiveSOCE/Mira-Factions/releases/tag/compat-modern-1.21.11-26.2) |
 
-[View releases](https://github.com/FiveSOCE/Mira-Factions/releases)
+The 1.18.2 Java 17 port uses legacy armour-stand FTop holograms in place of post-1.18 TextDisplay entities. Modern plugin pricing/spawner integrations use version-neutral adapters. Both builds still require live gameplay validation and we have not yet verified every 1.19–1.21.10 release.
 
-## Requirements / Integrations
+## Dependencies
 
-- Paper 1.21.11 through 26.2
-- Java 21
-- Vault + a Vault-compatible economy provider
-- PlaceholderAPI optional
-- MiraFly recommended/required for faction flight
-- MiraShop recommended for faction valuation pricing
-- MiraSpawners recommended for typed-spawner valuation
-- MiraNPC optional integration
-- LuckPerms, Essentials, MiraTab and MiraTags optional integrations
+- **Required:** Paper 1.18.2 and Java 17 for this branch; Vault and a Vault-compatible economy provider.
+- **Optional:** PlaceholderAPI, LuckPerms, EssentialsX, MiraFly, MiraTab, MiraTags, MiraShop, MiraSpawners, MiraCosmetics.
+- **Flight:** MiraFly provides actual flight; Factions controls eligibility.
+- **Valuation:** MiraShop/MiraSpawners provide optional dynamic valuation and spawner updates when compatible, with configured fallback pricing when absent.
+
+## Commands and permissions
+
+| Command | Permission | Purpose |
+| --- | --- | --- |
+| `/f` or `/factions` | `mirafactions.use` | Faction management, diplomacy, power, claims, bank, vault, TNT, upgrades, shields, homes, warps |
+| `/f create <name>` | `mirafactions.use` | Create a faction |
+| `/f claim`, `/f map`, `/f seechunk` | `mirafactions.use` | Claim and inspect territory |
+| `/f money`, `/f tnt` | `mirafactions.use` | Faction bank and TNT storage |
+| `/f fly`, `/f shield`, `/f upgrades` | `mirafactions.use` | Flight entitlement, shield and upgrades |
+| `/fa` or `/fadmin` | `mirafactions.admin` | Admin claims, special zones, FTop refresh and diagnostics |
+
+Additional permissions: `mirafactions.bypass` (OP) bypasses normal claim protections; `mirafactions.protectedzone.bypass` (OP) bypasses SafeZone/WarZone special protection. Individual actions also require faction-role permissions, configured for Recruit, Member, Officer, CoLeader and Leader.
+
+Before switching versions, back up `plugins/MiraFactions/`, remove the previous JAR and install **only one** compatible build.
 
 ## Faction Model
 
