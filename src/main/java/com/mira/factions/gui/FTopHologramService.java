@@ -103,7 +103,7 @@ public final class FTopHologramService {
                 if (display.getScoreboardTags().contains(TAG)) out.add(display);
             }
         }
-        out.sort(Comparator.comparingDouble(ArmorStand::getY).reversed());
+        out.sort(Comparator.comparingDouble((ArmorStand stand) -> stand.getLocation().getY()).reversed());
         return out;
     }
 
