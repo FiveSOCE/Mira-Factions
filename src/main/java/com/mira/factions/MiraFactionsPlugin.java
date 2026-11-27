@@ -107,7 +107,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, landValue::flushIfDirty, 20L * 60L, 20L * 60L);
         Bukkit.getScheduler().runTaskTimer(this, ftopHologram::refresh, 40L, 20L * 30L);
 
-        getLogger().info("MiraFactions v" + getPluginMeta().getVersion() + " enabled with " + factions.all().size() + " faction(s). Season: " + seasons.currentSeason());
+        getLogger().info("MiraFactions v" + getDescription().getVersion() + " enabled with " + factions.all().size() + " faction(s). Season: " + seasons.currentSeason());
     }
 
     private void installMiraShopPriceBridge() {
