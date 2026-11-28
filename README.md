@@ -46,6 +46,19 @@ Additional permissions: `mirafactions.bypass` (OP) bypasses normal claim protect
 
 Before switching versions, back up `plugins/MiraFactions/`, remove the previous JAR and install **only one** compatible build.
 
+## Paper 1.18.2 Factions fine-tuning
+
+The legacy 1.18.2 branch includes these user-facing changes:
+
+- **`/f map`** assigns a distinct symbol to each claimed faction visible on the current map, labeling each with its faction name. Safezone and Warzone appear by name only when visible. Unclaimed wilderness and unused categories are omitted from the legend.
+- **Truce** has been removed as a selectable chat mode and new /f truce requests are rejected; legacy persisted Truce relationships are interpreted as neutral.
+- **`/f c f`**, **`/f c p`**, **`/f c a`** choose faction, public and ally chat respectively. `/f chat` is an alias requiring an explicit channel instead of toggling on its own.
+- **`/f bank`** opens a 27-slot GUI with money and XP level deposit/withdraw buttons. Enter the amount in chat after clicking an action; the input is private and never broadcast. Type `cancel` to abort. XP is stored as whole levels and persisted with faction state. Monetary bank commands under `/f money` remain available for compatibility.
+- **`/f top`** lists ranked faction names with the total wealth in yellow and the numeric points figure in white, plus clickable names opening a read-only valuation breakdown (spawners, blocks, container items, faction money).
+- **Points figure:** until a separate points-award system is defined, the displayed number uses existing **faction power**. Ranking remains based on total wealth; points are informational, not a new economy or scoring mechanic.
+
+A successful Java 17 / Paper 1.18.2 compilation is required before replacing a tested server JAR; retain a backup of `plugins/MiraFactions/factions.yml` before upgrading because the XP bank adds `xpBankLevels` to faction persistence. These changes require gameplay verification after compilation.
+
 ## Faction Model
 
 Faction ranks are:
@@ -181,7 +194,7 @@ NEUTRAL
 ENEMY
 ```
 
-Faction chat supports public, faction, ally and truce channels. Relations can also participate in configured territory permissions.
+Faction chat supports public, faction and ally channels. Relations can also participate in configured territory permissions.
 
 ## Common Player Commands
 
