@@ -1,0 +1,15 @@
+# Paper 1.18.2 MiraFactions upgrade prices.
+# Every list contains the exact player-balance charge for levels 1 through max level.
+# Reload prices by restarting the server. Never charge the faction bank.
+upgrades:
+  warp_limit: [7500, 15000, 30000, 60000, 120000]
+  vault_size: [10000, 20000, 40000, 80000, 160000]
+  tnt_capacity: [7500, 15000, 30000, 60000, 120000]
+  flight: [30000]
+  damage: [20000, 40000, 80000, 160000, 320000]
+  defense: [20000, 40000, 80000, 160000, 320000]
+  mob_drops: [10000, 20000, 40000, 80000, 160000]
+  mob_xp: [10000, 20000, 40000, 80000, 160000]
+  crop_yield: [7500, 15000, 30000, 60000, 120000]
+  crop_growth: [7500, 15000, 30000, 60000, 120000]
+  spawner_rate: [15000, 30000, 60000, 120000, 240000]
