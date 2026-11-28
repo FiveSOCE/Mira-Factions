@@ -135,6 +135,8 @@ public final class FactionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onChat(AsyncChatEvent event) {
+        // Bank amount input is handled privately at LOWEST priority.
+        if (event.isCancelled()) return;
         Player player = event.getPlayer();
         ChatMode mode = service.chatMode(player.getUniqueId());
         if (mode != ChatMode.PUBLIC) {
