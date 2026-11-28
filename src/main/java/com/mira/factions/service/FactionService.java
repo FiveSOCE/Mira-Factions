@@ -815,29 +815,33 @@ public final class FactionService {
     public Result buyUpgrade(Player player, UpgradeType type) {
         Faction faction = of(player.getUniqueId());
         if (faction == null) return Result.fail("You are not in a faction.");
+        if (type == null || !type.purchasable()) return Result.fail("This upgrade is not available.");
         if (!hasPermission(player, FactionPermission.UPGRADE)) return Result.fail("You do not have faction permission to buy upgrades.");
         int current = faction.upgrade(type);
         if (current >= type.maxLevel()) return Result.fail(type.display() + " is already max level.");
+        double cost = upgradeCost(faction, type);
+        if (!Double.isFinite(cost) || cost <= 0D) return Result.fail("Upgrade price is invalid; ask an administrator to check upgrade-prices.yml.");
+        if (!economy.available() || economy.balance(player) < cost) return Result.fail("Your personal balance needs " + economy.format(cost) + ".");
+        if (!economy.withdraw(player, cost)) return Result.fail("Could not withdraw the upgrade price from your balance.");
         int next = current + 1;
-        double base = plugin.getConfig().getDouble("upgrades.cost-base", 10000.0);
-        double multiplier = plugin.getConfig().getDouble("upgrades.cost-multiplier", 2.0);
-        double typeMultiplier = plugin.getConfig().getDouble("upgrades.costs." + type.name().toLowerCase(Locale.ROOT), 1.0);
-        double cost = base * Math.pow(multiplier, current) * typeMultiplier;
-        if (faction.bankBalance() < cost) return Result.fail("Faction bank needs " + economy.format(cost) + " for this upgrade.");
-        faction.bankBalance(faction.bankBalance() - cost);
         faction.upgrades().put(type, next);
         save();
-        announce(faction, "&dPurchased " + type.display() + " level " + next + " for " + economy.format(cost) + ".");
+        announce(faction, "&d" + player.getName() + " purchased " + type.display() + " level " + next + " for " + economy.format(cost) + " from their own balance.");
         CosmeticsBridge.play(player, "faction_upgrade", player.getLocation());
         return Result.ok(type.display() + " upgraded to level " + next + ".");
     }
 
     public double upgradeCost(Faction faction, UpgradeType type) {
+        if (faction == null || type == null || !type.purchasable()) return -1D;
         int current = faction.upgrade(type);
-        double base = plugin.getConfig().getDouble("upgrades.cost-base", 10000.0);
-        double multiplier = plugin.getConfig().getDouble("upgrades.cost-multiplier", 2.0);
-        double typeMultiplier = plugin.getConfig().getDouble("upgrades.costs." + type.name().toLowerCase(Locale.ROOT), 1.0);
-        return base * Math.pow(multiplier, current) * typeMultiplier;
+        if (current >= type.maxLevel()) return 0D;
+        File file = new File(plugin.getDataFolder(), "upgrade-prices.yml");
+        if (!file.isFile()) plugin.saveResource("upgrade-prices.yml", false);
+        YamlConfiguration prices = YamlConfiguration.loadConfiguration(file);
+        List<Double> amounts = prices.getDoubleList("upgrades." + type.name().toLowerCase(Locale.ROOT));
+        if (current >= amounts.size()) return -1D;
+        double cost = amounts.get(current);
+        return Double.isFinite(cost) && cost > 0D ? cost : -1D;
     }
 
     public Result createZone(Player player, String name) {
