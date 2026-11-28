@@ -76,7 +76,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new FactionFlightDelegationListener(this, factions), this);
         getServer().getPluginManager().registerEvents(new FactionUpgradeAuditListener(this, factions, history), this);
         getServer().getPluginManager().registerEvents(new FactionUpgradeListener(this, factions), this);
-        getServer().getPluginManager().registerEvents(new FactionOperatorListener(this, factions, landValue), this);
+        getServer().getPluginManager().registerEvents(new FactionOperatorListener(this, factions, landValue, bankGui), this);
         getServer().getPluginManager().registerEvents(seasonListener, this);
         getServer().getPluginManager().registerEvents(podium, this);
         getServer().getPluginManager().registerEvents(new FactionSeasonCommandListener(this, factions, seasons, podium), this);
