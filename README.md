@@ -15,8 +15,19 @@ The 1.18.2 Java 17 port uses legacy armour-stand FTop holograms in place of post
 
 ## Dependencies
 
-- **Required:** Paper 1.18.2 and Java 17 for this branch; Vault and a Vault-compatible economy provider.
-- **Optional:** PlaceholderAPI, LuckPerms, EssentialsX, MiraFly, MiraTab, MiraTags, MiraShop, MiraSpawners, MiraCosmetics.
+- **Required:** Paper **1.18.2**, **Java 17**, **Vault**, and **a Vault-compatible economy provider** (such as EssentialsX Economy). Vault is only the bridge: Vault by itself does not maintain player balances.
+- **Optional integrations:** MiraCore 1.18.2, PlaceholderAPI, LuckPerms, MiraFly, MiraTab, MiraTags, MiraShop, MiraSpawners and MiraCosmetics. EssentialsX is optional specifically as a brand; some compatible economy provider is mandatory.
+- **Startup behavior:** If Vault is absent, Paper will reject MiraFactions using the plugin's required dependency declaration. If Vault is installed but has not registered an economy provider, MiraFactions logs an actionable error and disables itself rather than running with broken faction bank features.
+- **MiraCore:** Not required by this MiraFactions build. When installed, use **MiraCore_1.18.2.jar**; it is listed as an optional load-order dependency.
+
+### Paper 1.18.2 installation order
+
+1. Install a Paper 1.18.2-compatible **Vault** JAR and an economy plugin such as **EssentialsX**; configure its economy service.
+2. Install **MiraFactions_1.18.2.jar**. Keep MiraCore 1.18.2 installed if using the Mira ecosystem, but it is not required for basic Factions.
+3. Fully restart the server; avoid `/reload` when changing dependencies.
+4. Verify Vault and your economy plugin are enabled in `/plugins`, then test `/f`, `/f create <name>`, and faction bank transactions. A missing economy provider is a fatal configuration error, not a reason to install a newer MiraFactions build.
+
+Do not use a 1.21.11/26.2 Vault, EssentialsX, or Mira plugin build on a Java 17 / Paper 1.18.2 server unless that specific build documents compatibility.
 - **Flight:** MiraFly provides actual flight; Factions controls eligibility.
 - **Valuation:** MiraShop/MiraSpawners provide optional dynamic valuation and spawner updates when compatible, with configured fallback pricing when absent.
 
