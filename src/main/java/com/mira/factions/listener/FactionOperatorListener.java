@@ -66,13 +66,6 @@ public final class FactionOperatorListener implements Listener {
             return;
         }
 
-        if (isFactionAlias(args[0]) && args.length == 2 && args[1].equalsIgnoreCase("top")) {
-            event.setCancelled(true);
-            if (!event.getPlayer().hasPermission("mirafactions.use")) return;
-            showFactionTop(event.getPlayer());
-            return;
-        }
-
         if (isAdminAlias(args[0]) && args.length == 4 && args[1].equalsIgnoreCase("power")) {
             if (!event.getPlayer().hasPermission("mirafactions.admin")) return;
             double amount;
@@ -106,10 +99,6 @@ public final class FactionOperatorListener implements Listener {
             return;
         }
 
-        if (isFactionAlias(args[0]) && args.length >= 2 && Set.of("info", "show", "status").contains(args[1].toLowerCase(Locale.ROOT))) {
-            Faction faction = args.length >= 3 ? service.byName(args[2]) : service.of(event.getPlayer().getUniqueId());
-            if (faction != null) Bukkit.getScheduler().runTask(plugin, () -> showValue(event.getPlayer(), faction));
-        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -160,26 +149,23 @@ public final class FactionOperatorListener implements Listener {
 
     private void showFactionList(Player player, int requestedPage) {
         List<Faction> factions = service.all().stream()
-                .sorted(Comparator.comparingDouble((Faction f) -> service.factionPower(f)).reversed().thenComparing(Faction::name, String.CASE_INSENSITIVE_ORDER))
+                .sorted(Comparator.<Faction>comparingLong(faction ->
+                        faction.members().keySet().stream()
+                                .map(Bukkit::getPlayer).filter(Objects::nonNull).count()).reversed()
+                        .thenComparing(Faction::name, String.CASE_INSENSITIVE_ORDER))
                 .toList();
         int pages = Math.max(1, (factions.size() + 9) / 10);
         int page = Math.max(1, Math.min(requestedPage, pages));
         int start = (page - 1) * 10;
         int end = Math.min(factions.size(), start + 10);
-
-        plugin.msg(player, "&5&m--------------------------------");
-        plugin.msg(player, "&dFactions List &7(Page &f" + page + "&7/&f" + pages + "&7)");
+        plugin.msg(player, "&6Factions List &7(Page &f" + page + "&7/&f" + pages + "&7)");
         if (factions.isEmpty()) plugin.msg(player, "&7No factions exist yet.");
         for (int i = start; i < end; i++) {
             Faction faction = factions.get(i);
-            long online = faction.members().keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).count();
-            plugin.msg(player, "&f" + (i + 1) + ". &d" + faction.name()
-                    + " &7Members &f" + online + "/" + faction.members().size()
-                    + " &7Power &f" + format(service.factionPower(faction))
-                    + " &7Land &f" + faction.claims().size()
-                    + (service.raidable(faction) ? " &cRAIDABLE" : ""));
+            long online = faction.members().keySet().stream().map(Bukkit::getPlayer)
+                    .filter(Objects::nonNull).count();
+            plugin.msg(player, "&e" + faction.name() + " &7[" + online + "/" + faction.members().size() + "]");
         }
-        plugin.msg(player, "&7Use &f/f list <page>&7 to change pages. 10 factions per page.");
     }
 
     private void showFactionTop(Player player) {
