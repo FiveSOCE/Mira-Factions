@@ -716,6 +716,32 @@ public final class FactionService {
         return Result.ok("Withdrew " + economy.format(amount) + " from the faction bank.");
     }
 
+    public Result depositXp(Player player, int levels) {
+        Faction faction = of(player.getUniqueId());
+        if (faction == null) return Result.fail("You are not in a faction.");
+        if (levels <= 0) return Result.fail("Enter a positive number of levels.");
+        if (player.getLevel() < levels) return Result.fail("You do not have that many XP levels.");
+        if (levels > Integer.MAX_VALUE - faction.xpBankLevels()) return Result.fail("Faction XP bank is full.");
+        player.giveExpLevels(-levels);
+        faction.xpBankLevels(faction.xpBankLevels() + levels);
+        save();
+        return Result.ok("Deposited " + levels + " XP level(s) into the faction bank.");
+    }
+
+    public Result withdrawXp(Player player, int levels) {
+        Faction faction = of(player.getUniqueId());
+        if (faction == null) return Result.fail("You are not in a faction.");
+        if (!hasPermission(player, FactionPermission.ECONOMY))
+            return Result.fail("You do not have faction permission to withdraw XP.");
+        if (levels <= 0) return Result.fail("Enter a positive number of levels.");
+        if (faction.xpBankLevels() < levels) return Result.fail("Insufficient faction XP levels.");
+        if (player.getLevel() > Integer.MAX_VALUE - levels) return Result.fail("Your XP level is too high.");
+        player.giveExpLevels(levels);
+        faction.xpBankLevels(faction.xpBankLevels() - levels);
+        save();
+        return Result.ok("Withdrew " + levels + " XP level(s) from the faction bank.");
+    }
+
     public Result payFaction(Player player, String otherName, double amount) {
         Faction mine = of(player.getUniqueId());
         Faction other = byName(otherName);
@@ -1285,6 +1311,7 @@ public final class FactionService {
             yaml.set(base + ".powerBoost", faction.powerBoost());
             yaml.set(base + ".permanentPower", faction.permanentPower());
             yaml.set(base + ".bank", faction.bankBalance());
+            yaml.set(base + ".xpBankLevels", faction.xpBankLevels());
             yaml.set(base + ".tnt", faction.tntBalance());
             yaml.set(base + ".dues", faction.dues());
             yaml.set(base + ".rentDebt", faction.rentDebt());
@@ -1345,6 +1372,7 @@ public final class FactionService {
                 faction.powerBoost(yaml.getDouble(base + ".powerBoost", 0.0));
                 if (yaml.contains(base + ".permanentPower")) faction.permanentPower(yaml.getDouble(base + ".permanentPower"));
                 faction.bankBalance(yaml.getDouble(base + ".bank", 0.0));
+                faction.xpBankLevels(yaml.getInt(base + ".xpBankLevels", 0));
                 faction.tntBalance(yaml.getInt(base + ".tnt", 0));
                 faction.dues(yaml.getDouble(base + ".dues", 0.0));
                 faction.rentDebt(yaml.getDouble(base + ".rentDebt", 0.0));
