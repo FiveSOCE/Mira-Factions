@@ -528,7 +528,6 @@ public final class FactionService {
         if (a == v) return plugin.getConfig().getBoolean("combat.friendly-fire", false);
         Relation relation = relation(a, v);
         if (relation == Relation.ALLY) return plugin.getConfig().getBoolean("combat.ally-friendly-fire", false);
-        if (relation == Relation.TRUCE) return plugin.getConfig().getBoolean("combat.truce-friendly-fire", false);
         return true;
     }
 
@@ -690,7 +689,8 @@ public final class FactionService {
     public Relation relation(Faction first, Faction second) {
         if (first == null || second == null) return Relation.NEUTRAL;
         if (first == second) return Relation.ALLY;
-        return first.relations().getOrDefault(second.id(), Relation.NEUTRAL);
+        Relation relation = first.relations().getOrDefault(second.id(), Relation.NEUTRAL);
+        return relation == Relation.TRUCE ? Relation.NEUTRAL : relation;
     }
 
     public Result deposit(Player player, double amount) {
@@ -1139,7 +1139,6 @@ public final class FactionService {
         String prefix = switch (mode) {
             case FACTION -> "&d[F] ";
             case ALLY -> "&5[A] ";
-            case TRUCE -> "&b[T] ";
             default -> "";
         };
         Component full = plugin.component(prefix + "&f" + sender.getName() + "&7: ").append(message);
@@ -1148,7 +1147,6 @@ public final class FactionService {
             boolean receive = switch (mode) {
                 case FACTION -> theirs == mine;
                 case ALLY -> theirs == mine || relation(mine, theirs) == Relation.ALLY;
-                case TRUCE -> theirs == mine || relation(mine, theirs) == Relation.TRUCE;
                 default -> false;
             };
             if (receive) player.sendMessage(full);
@@ -1161,7 +1159,6 @@ public final class FactionService {
         Faction mine = of(viewer.getUniqueId());
         String color = faction == mine ? "&a" : switch (relation(mine, faction)) {
             case ALLY -> "&d";
-            case TRUCE -> "&b";
             case ENEMY -> "&c";
             default -> "&e";
         };
