@@ -283,7 +283,6 @@ public final class FactionOperatorListener implements Listener {
         return switch (mode) {
             case FACTION -> target == source;
             case ALLY -> target == source || service.relation(source, target) == Relation.ALLY;
-            case TRUCE -> target == source || service.relation(source, target) == Relation.TRUCE;
             default -> false;
         };
     }
