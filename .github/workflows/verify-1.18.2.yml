@@ -29,6 +29,8 @@ jobs:
           test -n "$JAR"
           test -s "$JAR"
           unzip -p "$JAR" plugin.yml | grep -Eq "api-version: ['\"]?1.18['\"]?"
+          unzip -p "$JAR" plugin.yml | grep -Eq '^depend:.*Vault'
+          unzip -p "$JAR" plugin.yml | grep -F 'main: com.mira.factions.MiraFactionsPlugin'
       - uses: actions/upload-artifact@v4
         with:
           name: legacy-1.18.2-compile-artifact
