@@ -234,11 +234,3 @@ plugins/MiraFactions/
 ```
 
 including faction state, history, seasons, FTop cache and hologram state.
-
-## Building
-
-```bash
-gradle clean build
-```
-
-The output JAR is created in `build/libs/`.
