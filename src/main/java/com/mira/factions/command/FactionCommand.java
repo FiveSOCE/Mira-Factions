@@ -446,14 +446,14 @@ public final class FactionCommand implements TabExecutor {
             plugin.msg(player, "&d/f perms &7| zone &7| set <tag|description|link|open|title|dues>");
             plugin.msg(player, "&7Use &f/f help 3 &7for utilities/status.");
         } else {
-            plugin.msg(player, "&d/f info [faction] &7| power [player] &7| top &7| near &7| coords");
+            plugin.msg(player, "&d/f show [faction] &7| list [page] &7| power [player] &7| top &7| near &7| coords");
             plugin.msg(player, "&d/f announce <message> &7| stuck &7| invite list/revoke/clear &7| bans");
         }
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1) return filter(args[0], List.of("help","create","invite","join","leave","disband","kick","ban","unban","bans","promote","demote","role","transfer","claim","auto","unclaim","map","seechunk","sethome","delhome","home","setwarp","delwarp","warp","warps","chat","c","ally","enemy","neutral","power","info","set","perms","bank","money","tnt","shield","fly","upgrades","vault","zone","near","coords","announce","stuck","top"));
+        if (args.length == 1) return filter(args[0], List.of("help","create","invite","join","leave","disband","kick","ban","unban","bans","promote","demote","role","transfer","claim","auto","unclaim","map","seechunk","sethome","delhome","home","setwarp","delwarp","warp","warps","chat","c","ally","enemy","neutral","power","info","show","status","list","set","perms","bank","money","tnt","shield","fly","upgrades","vault","zone","near","coords","announce","stuck","top"));
         if (args.length == 2 && List.of("ally","enemy","neutral","join","info").contains(args[0].toLowerCase(Locale.ROOT))) return filter(args[1], service.all().stream().map(Faction::name).toList());
         if (args.length == 2 && List.of("invite","kick","ban","unban","promote","demote","role","transfer","power").contains(args[0].toLowerCase(Locale.ROOT))) return filter(args[1], Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
         if (args.length == 2 && List.of("chat", "c").contains(args[0].toLowerCase(Locale.ROOT))) return filter(args[1], List.of("f","p","a"));
