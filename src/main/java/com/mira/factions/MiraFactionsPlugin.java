@@ -6,6 +6,7 @@ import com.mira.factions.gui.FTopPodiumService;
 import com.mira.factions.gui.FTopHologramService;
 import com.mira.factions.gui.FactionGuiService;
 import com.mira.factions.gui.FactionBankGui;
+import com.mira.factions.gui.FactionTopBreakdownGui;
 import com.mira.factions.hook.MiraFactionsPlaceholderExpansion;
 import com.mira.factions.hook.MiraSpawnersValueBridge;
 import com.mira.factions.listener.*;
@@ -51,6 +52,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         history.initializeBanks(factions.all());
         FactionGuiService gui = new FactionGuiService(this, factions);
         FactionBankGui bankGui = new FactionBankGui(this, factions);
+        FactionTopBreakdownGui topGui = new FactionTopBreakdownGui(this);
         FTopPodiumService podium = new FTopPodiumService(this, factions, landValue, seasons);
         ftopHologram = new FTopHologramService(this, factions, landValue);
 
@@ -67,6 +69,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new FactionHistoryTabListener(), this);
         getServer().getPluginManager().registerEvents(new FactionAdminAuditListener(this, factions, history), this);
         getServer().getPluginManager().registerEvents(bankGui, this);
+        getServer().getPluginManager().registerEvents(topGui, this);
         getServer().getPluginManager().registerEvents(new FactionListener(this, factions, gui), this);
         getServer().getPluginManager().registerEvents(new ProtectedZoneListener(this, factions), this);
         getServer().getPluginManager().registerEvents(new AdminFactionClaimListener(this, factions), this);
@@ -78,7 +81,7 @@ public final class MiraFactionsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(podium, this);
         getServer().getPluginManager().registerEvents(new FactionSeasonCommandListener(this, factions, seasons, podium), this);
 
-        FactionCommand factionExecutor = new FactionCommand(this, factions, gui, bankGui);
+        FactionCommand factionExecutor = new FactionCommand(this, factions, gui, bankGui, topGui);
         PluginCommand factionCommand = getCommand("faction");
         if (factionCommand == null) throw new IllegalStateException("faction command missing from plugin.yml");
         factionCommand.setExecutor(factionExecutor);
