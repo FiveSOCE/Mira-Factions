@@ -67,7 +67,6 @@ public final class FactionCommand implements TabExecutor {
             case "warps" -> warps(player);
             case "chat", "c" -> chat(player, args);
             case "ally" -> relation(player, args, Relation.ALLY);
-            case "truce" -> respond(player, fail("Truce has been removed. Use /f ally or /f neutral."));
             case "enemy" -> relation(player, args, Relation.ENEMY);
             case "neutral" -> relation(player, args, Relation.NEUTRAL);
             case "power" -> power(player, args);
