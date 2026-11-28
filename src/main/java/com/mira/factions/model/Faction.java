@@ -18,6 +18,7 @@ public final class Faction {
     private double powerBoost;
     private Double permanentPower;
     private double bankBalance;
+    private int xpBankLevels;
     private int tntBalance;
     private double dues;
     private double rentDebt;
@@ -74,6 +75,8 @@ public final class Faction {
     public void permanentPower(Double value) { permanentPower = value; }
     public double bankBalance() { return bankBalance; }
     public void bankBalance(double value) { bankBalance = Math.max(0.0, value); }
+    public int xpBankLevels() { return xpBankLevels; }
+    public void xpBankLevels(int levels) { xpBankLevels = Math.max(0, levels); }
     public int tntBalance() { return tntBalance; }
     public void tntBalance(int value) { tntBalance = Math.max(0, value); }
     public double dues() { return dues; }
