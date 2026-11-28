@@ -40,6 +40,8 @@ public final class FactionBankGui implements Listener {
         this.service = service;
     }
 
+    public boolean awaitingInput(UUID playerId) { return pending.containsKey(playerId); }
+
     public void open(Player player) {
         Faction faction = service.of(player.getUniqueId());
         if (faction == null) { plugin.msg(player, "&cYou are not in a faction."); return; }
