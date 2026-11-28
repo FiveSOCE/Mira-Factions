@@ -98,7 +98,6 @@ public final class MiraFactionsApiImpl implements MiraFactionsApi {
 
         return switch (service.relation(faction, owner)) {
             case ALLY -> FlightTerritory.ALLY;
-            case TRUCE -> FlightTerritory.TRUCE;
             case ENEMY -> FlightTerritory.ENEMY;
             default -> FlightTerritory.NEUTRAL;
         };
