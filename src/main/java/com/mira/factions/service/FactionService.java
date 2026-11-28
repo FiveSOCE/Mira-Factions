@@ -66,6 +66,14 @@ public final class FactionService {
         return Math.max(0.0, raw);
     }
     public int maxClaims(Faction faction) { return Math.max(0, (int) Math.floor(factionPower(faction))); }
+    public double factionMaxPower(Faction faction) {
+        if (faction == null) return 0D;
+        double individual = plugin.getConfig().getDouble("power.maximum", 10D)
+                + faction.upgrade(UpgradeType.POWER) * plugin.getConfig().getDouble("upgrades.power.individual-max-per-level", 0D);
+        return Math.max(0D, faction.members().size() * individual + faction.powerBoost()
+                + faction.upgrade(UpgradeType.POWER) * plugin.getConfig().getDouble("upgrades.power.per-level", 10D));
+    }
+
     public boolean raidable(Faction faction) { return faction != null && !faction.peaceful() && faction.claims().size() > maxClaims(faction); }
     public boolean shielded(Faction faction) { return faction != null && faction.shieldUntil() > System.currentTimeMillis(); }
     public boolean graceActive() { return graceUntil > System.currentTimeMillis(); }
@@ -388,6 +396,7 @@ public final class FactionService {
                 save();
                 announce(existing, "&cEnemy faction " + faction.name() + " overclaimed one of your chunks!");
                 announce(faction, "&aOverclaimed a chunk from " + existing.name() + ".");
+                announceClaim(faction, player, location);
                 CosmeticsBridge.play(player, "faction_claim", location);
                 return Result.ok("Overclaimed enemy territory from " + existing.name() + ".");
             }
@@ -397,7 +406,16 @@ public final class FactionService {
         claimOwner.put(key, faction.id());
         save();
         CosmeticsBridge.play(player, "faction_claim", location);
+        announceClaim(faction, player, location);
         return Result.ok("Claimed this chunk for " + faction.name() + ".");
+    }
+
+    private void announceClaim(Faction faction, Player actor, Location location) {
+        int chunkX = location.getBlockX() >> 4;
+        int chunkZ = location.getBlockZ() >> 4;
+        announce(faction, "&d[Faction] &f" + actor.getName() + " &aclaimed chunk &f"
+                + chunkX + ", " + chunkZ + " &7(" + location.getWorld().getName() + ")"
+                + " &7[blocks " + (chunkX * 16) + ", " + (chunkZ * 16) + "]");
     }
 
     public Result claimRadius(Player player, int radius) {
