@@ -11,6 +11,19 @@ MiraFactions follows the classic FactionsUUID-style gameplay loop while adding f
 | **Paper 1.18.2** | 17 | `MiraFactions_1.18.2.jar` | [Download 1.18.2 JAR](https://github.com/FiveSOCE/Mira-Factions/releases/download/dev-1.18.2/MiraFactions_1.18.2.jar) |
 | **Paper 1.21.11–26.2** | 21 baseline; modern server may require Java 25 | `MiraFactions_1.21.11-26.2.jar` | [Download modern JAR](https://github.com/FiveSOCE/Mira-Factions/releases/download/compat-modern-1.21.11-26.2/MiraFactions_1.21.11-26.2.jar) |
 
+**Latest Paper 1.18.2 testing build:** updated with the upgrade, faction profile, online-sorted list and claim-announcement refinements. The direct 1.18.2 download above points to the newly rebuilt and published `MiraFactions_1.18.2.jar` (verified [Java 17 build](https://github.com/FiveSOCE/Mira-Factions/actions/runs/46168088964)). Back up faction data before replacing your JAR.
+
+### What's new in the Paper 1.18.2 build
+
+- `/f upgrades` purchases now use the **player's Vault balance**, not faction funds. Eleven upgrades remain available; Power, Member Limit, Shield, Power Regen, Power Loss, Zone Limit, Home Warmup and Warp Warmup are removed from new purchases.
+- Configure exact per-level upgrade costs in `plugins/MiraFactions/upgrade-prices.yml`, created automatically. The GUI displays current levels, costs and descriptions.
+- `/f show [faction]` now displays FTop ranking, wealth, leader and co-leaders, faction age, land/power, enemies and online/offline rosters.
+- `/f list [page]` lists factions in descending order of **online players**, ten per page, as `FactionName [online/total]`.
+- Successful manual and automatic chunk claims notify online faction members of the claimant and chunk coordinates.
+- Prior refinements include the per-faction `/f map` legend, removal of Truce, explicit `/f c f|p|a` channel selection, `/f bank` money/XP GUI, and clickable `/f top` wealth breakdown.
+
+These refinements are **compiled and published but still require in-game retesting**. [Full legacy configuration and documentation](https://github.com/FiveSOCE/Mira-Factions/blob/compat/1.18.2/README.md).
+
 Both versioned JARs have passed their respective GitHub Actions compilation checks and are available as verified GitHub release assets. In-game integration and functionality testing remains outstanding. The modern binary is compiled against Paper 1.21.11 and checked against 26.2. Compatibility with intermediate versions 1.19–1.21.10 is **not yet verified**.
 
 [Legacy source](https://github.com/FiveSOCE/Mira-Factions/tree/compat/1.18.2) · [Modern source](https://github.com/FiveSOCE/Mira-Factions) · [All releases](https://github.com/FiveSOCE/Mira-Factions/releases)
