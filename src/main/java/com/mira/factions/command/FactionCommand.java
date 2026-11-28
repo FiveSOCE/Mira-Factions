@@ -196,19 +196,56 @@ public final class FactionCommand implements TabExecutor {
     private boolean info(Player player, String[] args) {
         Faction faction = args.length > 1 ? service.byName(args[1]) : service.of(player.getUniqueId());
         if (faction == null) return respond(player, fail("Faction not found."));
-        long online = faction.members().keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).count();
-        SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd");
-        plugin.msg(player, "&5&m--------------------------------");
-        plugin.msg(player, "&d" + faction.name() + (service.raidable(faction) ? " &c[RAIDABLE]" : " &a[PROTECTED]"));
-        if (!faction.description().isBlank()) plugin.msg(player, "&7" + faction.description());
-        if (!faction.link().isBlank()) plugin.msg(player, "&7Link: &f" + faction.link());
-        plugin.msg(player, "&7Created: &f" + date.format(new Date(faction.createdAt())) + " &7Open: &f" + faction.open());
-        plugin.msg(player, "&7Members: &f" + faction.members().size() + "/" + service.memberLimit(faction) + " &7Online: &f" + online);
-        plugin.msg(player, "&7Power: &f" + String.format(Locale.US, "%.1f", service.factionPower(faction)) + " &7Claims: &f" + faction.claims().size() + "/" + service.maxClaims(faction));
-        plugin.msg(player, "&7Bank: &f" + plugin.economy().format(faction.bankBalance()) + " &7TNT: &f" + faction.tntBalance() + "/" + service.tntCapacity(faction));
-        if (service.shielded(faction)) plugin.msg(player, "&bShield: ACTIVE");
-        if (faction.peaceful()) plugin.msg(player, "&aPeaceful faction");
+        List<Faction> ranked = service.all().stream()
+                .sorted(Comparator.comparingDouble((Faction other) ->
+                        plugin.landValue().value(other) + other.bankBalance()).reversed()
+                        .thenComparing(Faction::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        int position = ranked.indexOf(faction) + 1;
+        double wealth = plugin.landValue().value(faction) + faction.bankBalance();
+        List<String> leaders = memberNames(faction, FactionRank.LEADER);
+        List<String> coLeaders = memberNames(faction, FactionRank.COLEADER);
+        List<String> online = new ArrayList<>();
+        List<String> offline = new ArrayList<>();
+        for (UUID uuid : faction.members().keySet()) {
+            Player member = Bukkit.getPlayer(uuid);
+            if (member != null && member.isOnline()) online.add(member.getName());
+            else offline.add(memberName(uuid));
+        }
+        online.sort(String.CASE_INSENSITIVE_ORDER);
+        offline.sort(String.CASE_INSENSITIVE_ORDER);
+        List<String> enemies = service.all().stream()
+                .filter(other -> other != faction && service.relation(faction, other) == Relation.ENEMY)
+                .map(Faction::name).sorted(String.CASE_INSENSITIVE_ORDER).toList();
+        long ageHours = Math.max(0L, System.currentTimeMillis() - faction.createdAt()) / 3_600_000L;
+        long days = ageHours / 24;
+        long hours = ageHours % 24;
+        double maxPower = service.factionMaxPower(faction);
+        plugin.msg(player, "&8-----------------&6[" + faction.name() + "]&8-----------------");
+        plugin.msg(player, "&e✦ &7/f top: &f#" + position + " &e$" + String.format(Locale.US, "%,.2f", wealth));
+        plugin.msg(player, "&e✦ &7Leader: &f" + String.join(", ", leaders));
+        plugin.msg(player, "&e✦ &7Co-Leader: &f" + (coLeaders.isEmpty() ? "None" : String.join(", ", coLeaders)));
+        plugin.msg(player, "&e✦ &7Created: &f" + days + "d " + hours + "h ago");
+        plugin.msg(player, "&e✦ &7Land / Power / Max Power: &f" + faction.claims().size()
+                + " / " + String.format(Locale.US, "%.1f", service.factionPower(faction))
+                + " / " + String.format(Locale.US, "%.1f", maxPower));
+        plugin.msg(player, "&e✦ &7Enemies: &f[" + enemies.size() + "]: " + (enemies.isEmpty() ? "None" : String.join(", ", enemies)));
+        plugin.msg(player, "&e✦ &7Online Members: &a[" + online.size() + "/" + faction.members().size()
+                + "]: &f" + (online.isEmpty() ? "None" : String.join(", ", online)));
+        plugin.msg(player, "&e✦ &7Offline Members: &c[" + offline.size() + "/" + faction.members().size()
+                + "]: &f" + (offline.isEmpty() ? "None" : String.join(", ", offline)));
         return true;
+    }
+
+    private List<String> memberNames(Faction faction, FactionRank rank) {
+        return faction.members().entrySet().stream().filter(entry -> entry.getValue() == rank)
+                .map(entry -> memberName(entry.getKey()))
+                .sorted(String.CASE_INSENSITIVE_ORDER).toList();
+    }
+
+    private String memberName(UUID uuid) {
+        String name = Bukkit.getOfflinePlayer(uuid).getName();
+        return name == null || name.isBlank() ? uuid.toString().substring(0, 8) : name;
     }
 
     private boolean set(Player player, String[] args) {
