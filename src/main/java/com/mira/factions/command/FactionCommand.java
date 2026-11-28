@@ -2,6 +2,11 @@ package com.mira.factions.command;
 
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.gui.FactionGuiService;
+import com.mira.factions.gui.FactionBankGui;
+import com.mira.factions.gui.FactionTopBreakdownGui;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import com.mira.factions.model.*;
 import com.mira.factions.service.FactionService;
 import org.bukkit.Bukkit;
@@ -16,11 +21,15 @@ public final class FactionCommand implements TabExecutor {
     private final MiraFactionsPlugin plugin;
     private final FactionService service;
     private final FactionGuiService gui;
+    private final FactionBankGui bankGui;
+    private final FactionTopBreakdownGui topGui;
 
-    public FactionCommand(MiraFactionsPlugin plugin, FactionService service, FactionGuiService gui) {
+    public FactionCommand(MiraFactionsPlugin plugin, FactionService service, FactionGuiService gui, FactionBankGui bankGui, FactionTopBreakdownGui topGui) {
         this.plugin = plugin;
         this.service = service;
         this.gui = gui;
+        this.bankGui = bankGui;
+        this.topGui = topGui;
     }
 
     @Override
@@ -58,7 +67,7 @@ public final class FactionCommand implements TabExecutor {
             case "warps" -> warps(player);
             case "chat", "c" -> chat(player, args);
             case "ally" -> relation(player, args, Relation.ALLY);
-            case "truce" -> relation(player, args, Relation.TRUCE);
+            case "truce" -> respond(player, fail("Truce has been removed. Use /f ally or /f neutral."));
             case "enemy" -> relation(player, args, Relation.ENEMY);
             case "neutral" -> relation(player, args, Relation.NEUTRAL);
             case "power" -> power(player, args);
@@ -68,7 +77,8 @@ public final class FactionCommand implements TabExecutor {
                 if (args.length == 1) { gui.openPermissions(player); yield true; }
                 yield permissions(player, args);
             }
-            case "money", "bank" -> money(player, args);
+            case "money" -> money(player, args);
+            case "bank" -> { bankGui.open(player); yield true; }
             case "tnt" -> tnt(player, args);
             case "shield" -> { gui.openShield(player); yield true; }
             case "fly" -> fly(player);
@@ -80,6 +90,7 @@ public final class FactionCommand implements TabExecutor {
             case "announce" -> announce(player, args);
             case "stuck" -> respond(player, service.stuck(player));
             case "top" -> top(player);
+            case "topview" -> topView(player, args);
             default -> { help(player, 1); yield true; }
         };
     }
@@ -156,13 +167,16 @@ public final class FactionCommand implements TabExecutor {
     }
 
     private boolean chat(Player player, String[] args) {
-        ChatMode mode;
-        if (args.length < 2) mode = service.chatMode(player.getUniqueId()) == ChatMode.FACTION ? ChatMode.PUBLIC : ChatMode.FACTION;
-        else {
-            try { mode = ChatMode.valueOf(args[1].toUpperCase(Locale.ROOT)); }
-            catch (IllegalArgumentException ex) { return respond(player, fail("Chat modes: public, faction, ally, truce.")); }
-        }
-        if (mode != ChatMode.PUBLIC && service.of(player.getUniqueId()) == null) return respond(player, fail("You are not in a faction."));
+        if (args.length < 2) return respond(player, fail("Usage: /f c <f|p|a> (faction, public, ally)"));
+        ChatMode mode = switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "f", "faction" -> ChatMode.FACTION;
+            case "p", "public" -> ChatMode.PUBLIC;
+            case "a", "ally" -> ChatMode.ALLY;
+            default -> null;
+        };
+        if (mode == null) return respond(player, fail("Chat modes: f (faction), p (public), a (ally)."));
+        if (mode != ChatMode.PUBLIC && service.of(player.getUniqueId()) == null)
+            return respond(player, fail("You are not in a faction."));
         service.chatMode(player.getUniqueId(), mode);
         plugin.msg(player, "&aChat channel: &f" + mode + ".");
         return true;
@@ -231,7 +245,7 @@ public final class FactionCommand implements TabExecutor {
             return true;
         }
         if (args[1].equalsIgnoreCase("relation")) {
-            if (args.length < 5) return respond(player, fail("Usage: /f perms relation <permission> <ally|truce|neutral|enemy> <allow|deny>"));
+            if (args.length < 5) return respond(player, fail("Usage: /f perms relation <permission> <ally|neutral|enemy> <allow|deny>"));
             try {
                 FactionPermission permission = FactionPermission.valueOf(args[2].toUpperCase(Locale.ROOT));
                 Relation relation = Relation.valueOf(args[3].toUpperCase(Locale.ROOT));
@@ -334,25 +348,44 @@ public final class FactionCommand implements TabExecutor {
 
     private boolean top(Player player) {
         List<Faction> sorted = service.all().stream()
-                .sorted(Comparator.comparingDouble((Faction faction) -> plugin.landValue().value(faction) + faction.bankBalance())
-                        .reversed()
-                        .thenComparing(Faction::name, String.CASE_INSENSITIVE_ORDER))
-                .limit(10)
-                .toList();
-        plugin.msg(player, "&5&m----&d Faction Top &5&m----");
+                .sorted(Comparator.comparingDouble((Faction faction) ->
+                        plugin.landValue().value(faction) + faction.bankBalance())
+                        .reversed().thenComparing(Faction::name, String.CASE_INSENSITIVE_ORDER))
+                .limit(10).toList();
+        player.sendMessage(plugin.component("&6Faction Top - Ranking"));
+        if (sorted.isEmpty()) {
+            player.sendMessage(plugin.component("&7No factions ranked yet."));
+            return true;
+        }
+        String[] colors = {"&b", "&d", "&a", "&e", "&f"};
         int place = 1;
         for (Faction faction : sorted) {
-            double land = plugin.landValue().value(faction);
-            double total = land + faction.bankBalance();
-            plugin.msg(player, "&d#" + place++ + " &f" + faction.name()
-                    + " &7Value: &a$" + String.format(Locale.US, "%,.2f", total)
-                    + " &7Land: &f$" + String.format(Locale.US, "%,.2f", land)
-                    + " &7Bank: &f$" + String.format(Locale.US, "%,.2f", faction.bankBalance()));
+            String color = place <= 5 ? colors[place - 1] : "&7";
+            double total = plugin.landValue().value(faction) + faction.bankBalance();
+            // Until a dedicated points-scoring system exists, display the existing faction power.
+            String points = String.format(Locale.US, "%.1f", service.factionPower(faction));
+            Component line = plugin.component("&7#" + place + " " + color + faction.name()
+                    + " &7: &e$" + String.format(Locale.US, "%,.2f", total)
+                    + " &7| &f" + points)
+                    .hoverEvent(HoverEvent.showText(plugin.component("&eClick to see breakdown")))
+                    .clickEvent(ClickEvent.runCommand("/f topview " + faction.id()));
+            player.sendMessage(line);
+            place++;
         }
         return true;
     }
 
-        private boolean respond(Player player, FactionService.Result result) {
+    private boolean topView(Player player, String[] args) {
+        if (args.length != 2) return respond(player, fail("Usage: /f topview <faction>"));
+        try {
+            topGui.open(player, service.byId(UUID.fromString(args[1])));
+        } catch (IllegalArgumentException ex) {
+            topGui.open(player, service.byName(args[1]));
+        }
+        return true;
+    }
+
+    private boolean respond(Player player, FactionService.Result result) {
         if (!result.message().isBlank()) plugin.msg(player, (result.success() ? "&a" : "&c") + result.message());
         return true;
     }
@@ -372,8 +405,8 @@ public final class FactionCommand implements TabExecutor {
             plugin.msg(player, "&d/f home/sethome/delhome &7| setwarp/delwarp/warp/warps");
             plugin.msg(player, "&7Use &f/f help 2 &7for diplomacy/economy/war systems.");
         } else if (page == 2) {
-            plugin.msg(player, "&d/f ally/truce/enemy/neutral <faction> &7| chat <channel>");
-            plugin.msg(player, "&d/f money &7| tnt &7| shield &7| fly &7| upgrades &7| vault");
+            plugin.msg(player, "&d/f ally/enemy/neutral <faction> &7| /f c <f|p|a>");
+            plugin.msg(player, "&d/f bank &7| money &7| tnt &7| shield &7| fly &7| upgrades &7| vault");
             plugin.msg(player, "&d/f perms &7| zone &7| set <tag|description|link|open|title|dues>");
             plugin.msg(player, "&7Use &f/f help 3 &7for utilities/status.");
         } else {
@@ -384,10 +417,10 @@ public final class FactionCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1) return filter(args[0], List.of("help","create","invite","join","leave","disband","kick","ban","unban","bans","promote","demote","role","transfer","claim","auto","unclaim","map","seechunk","sethome","delhome","home","setwarp","delwarp","warp","warps","chat","ally","truce","enemy","neutral","power","info","set","perms","money","tnt","shield","fly","upgrades","vault","zone","near","coords","announce","stuck","top"));
-        if (args.length == 2 && List.of("ally","truce","enemy","neutral","join","info").contains(args[0].toLowerCase(Locale.ROOT))) return filter(args[1], service.all().stream().map(Faction::name).toList());
+        if (args.length == 1) return filter(args[0], List.of("help","create","invite","join","leave","disband","kick","ban","unban","bans","promote","demote","role","transfer","claim","auto","unclaim","map","seechunk","sethome","delhome","home","setwarp","delwarp","warp","warps","chat","c","ally","enemy","neutral","power","info","set","perms","bank","money","tnt","shield","fly","upgrades","vault","zone","near","coords","announce","stuck","top"));
+        if (args.length == 2 && List.of("ally","enemy","neutral","join","info").contains(args[0].toLowerCase(Locale.ROOT))) return filter(args[1], service.all().stream().map(Faction::name).toList());
         if (args.length == 2 && List.of("invite","kick","ban","unban","promote","demote","role","transfer","power").contains(args[0].toLowerCase(Locale.ROOT))) return filter(args[1], Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
-        if (args.length == 2 && args[0].equalsIgnoreCase("chat")) return filter(args[1], Arrays.stream(ChatMode.values()).map(v -> v.name().toLowerCase(Locale.ROOT)).toList());
+        if (args.length == 2 && List.of("chat", "c").contains(args[0].toLowerCase(Locale.ROOT))) return filter(args[1], List.of("f","p","a"));
         if (args.length == 2 && args[0].equalsIgnoreCase("set")) return filter(args[1], List.of("tag","description","link","open","title","dues"));
         if (args.length == 2 && args[0].equalsIgnoreCase("money")) return filter(args[1], List.of("balance","deposit","withdraw","pay"));
         if (args.length == 2 && args[0].equalsIgnoreCase("tnt")) return filter(args[1], List.of("balance","deposit","withdraw"));
