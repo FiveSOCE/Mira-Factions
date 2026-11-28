@@ -686,11 +686,17 @@ public final class FactionService {
         }
     }
 
+    private static Relation savedRelation(String text) {
+        // Migrate legacy TRUCE entries without losing the rest of the saved faction state.
+        if (text == null || text.equalsIgnoreCase("TRUCE")) return Relation.NEUTRAL;
+        try { return Relation.valueOf(text.toUpperCase(Locale.ROOT)); }
+        catch (IllegalArgumentException exception) { return Relation.NEUTRAL; }
+    }
+
     public Relation relation(Faction first, Faction second) {
         if (first == null || second == null) return Relation.NEUTRAL;
         if (first == second) return Relation.ALLY;
-        Relation relation = first.relations().getOrDefault(second.id(), Relation.NEUTRAL);
-        return relation == Relation.TRUCE ? Relation.NEUTRAL : relation;
+        return first.relations().getOrDefault(second.id(), Relation.NEUTRAL);
     }
 
     public Result deposit(Player player, double amount) {
@@ -1393,16 +1399,25 @@ public final class FactionService {
                 if (debts != null) for (String uuidText : debts.getKeys(false)) faction.duesDebt().put(UUID.fromString(uuidText), debts.getDouble(uuidText));
                 for (String claim : yaml.getStringList(base + ".claims")) { faction.claims().add(claim); claimOwner.put(claim, id); }
                 ConfigurationSection relations = yaml.getConfigurationSection(base + ".relations");
-                if (relations != null) for (String uuidText : relations.getKeys(false)) faction.relations().put(UUID.fromString(uuidText), Relation.valueOf(relations.getString(uuidText, "NEUTRAL")));
+                if (relations != null) for (String uuidText : relations.getKeys(false)) {
+                    Relation existing = savedRelation(relations.getString(uuidText, "NEUTRAL"));
+                    if (existing != Relation.NEUTRAL) faction.relations().put(UUID.fromString(uuidText), existing);
+                }
                 ConfigurationSection requests = yaml.getConfigurationSection(base + ".relationRequests");
-                if (requests != null) for (String uuidText : requests.getKeys(false)) faction.relationRequests().put(UUID.fromString(uuidText), Relation.valueOf(requests.getString(uuidText, "ALLY")));
+                if (requests != null) for (String uuidText : requests.getKeys(false)) {
+                    Relation existing = savedRelation(requests.getString(uuidText, "ALLY"));
+                    if (existing != Relation.NEUTRAL) faction.relationRequests().put(UUID.fromString(uuidText), existing);
+                }
                 for (String uuidText : yaml.getStringList(base + ".allyRequests")) faction.relationRequests().put(UUID.fromString(uuidText), Relation.ALLY);
                 ConfigurationSection rankPerms = yaml.getConfigurationSection(base + ".permissions.ranks");
                 if (rankPerms != null) for (String key : rankPerms.getKeys(false)) faction.minimumRanks().put(FactionPermission.valueOf(key), FactionRank.valueOf(rankPerms.getString(key)));
                 ConfigurationSection relationPerms = yaml.getConfigurationSection(base + ".permissions.relations");
                 if (relationPerms != null) for (String key : relationPerms.getKeys(false)) {
                     Set<Relation> set = EnumSet.noneOf(Relation.class);
-                    for (String relation : relationPerms.getStringList(key)) set.add(Relation.valueOf(relation));
+                    for (String relation : relationPerms.getStringList(key)) {
+                        Relation existing = savedRelation(relation);
+                        if (existing != Relation.NEUTRAL) set.add(existing);
+                    }
                     faction.relationAccess().put(FactionPermission.valueOf(key), set);
                 }
                 Location home = yaml.getLocation(base + ".home");
