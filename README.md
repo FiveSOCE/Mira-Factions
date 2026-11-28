@@ -26,6 +26,10 @@ These refinements are **compiled and published but still require in-game retesti
 
 Both versioned JARs have passed their respective GitHub Actions compilation checks and are available as verified GitHub release assets. In-game integration and functionality testing remains outstanding. The modern binary is compiled against Paper 1.21.11 and checked against 26.2. Compatibility with intermediate versions 1.19–1.21.10 is **not yet verified**.
 
+**Build status:** Version-specific direct links are provided where published. A GitHub Actions or Releases link means the corresponding versioned JAR has not been verified. Compilation alone does not establish in-game compatibility; intermediate versions 1.19–1.21.10 remain unverified unless specifically documented.
+
+**Installation:** Back up plugin data, remove older JAR copies and install only the build matching your server. Never install both builds together.
+
 [Legacy source](https://github.com/FiveSOCE/Mira-Factions/tree/compat/1.18.2) · [Modern source](https://github.com/FiveSOCE/Mira-Factions) · [All releases](https://github.com/FiveSOCE/Mira-Factions/releases)
 
 ## Dependencies and installation
