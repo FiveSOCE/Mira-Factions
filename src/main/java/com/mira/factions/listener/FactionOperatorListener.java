@@ -2,6 +2,7 @@ package com.mira.factions.listener;
 
 import com.mira.factions.MiraFactionsPlugin;
 import com.mira.factions.command.FactionAdminCommand;
+import com.mira.factions.gui.FactionBankGui;
 import com.mira.factions.model.ChatMode;
 import com.mira.factions.model.Faction;
 import com.mira.factions.model.Relation;
@@ -28,14 +29,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class FactionOperatorListener implements Listener {
     private final MiraFactionsPlugin plugin;
     private final FactionService service;
+    private final FactionBankGui bankGui;
     private final FactionLandValueService landValue;
     private final Set<UUID> autoMap = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Double> operatorPower = new ConcurrentHashMap<>();
 
-    public FactionOperatorListener(MiraFactionsPlugin plugin, FactionService service, FactionLandValueService landValue) {
+    public FactionOperatorListener(MiraFactionsPlugin plugin, FactionService service, FactionLandValueService landValue, FactionBankGui bankGui) {
         this.plugin = plugin;
         this.service = service;
         this.landValue = landValue;
+        this.bankGui = bankGui;
         recoverOutOfRangeOperatorPower();
         Bukkit.getScheduler().runTaskTimer(plugin, this::enforceOperatorPower, 20L, 20L);
     }
@@ -138,6 +141,7 @@ public final class FactionOperatorListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onFactionChatSpy(AsyncChatEvent event) {
         Player sender = event.getPlayer();
+        if (bankGui.awaitingInput(sender.getUniqueId())) return;
         ChatMode mode = service.chatMode(sender.getUniqueId());
         if (mode == ChatMode.PUBLIC || service.of(sender.getUniqueId()) == null) return;
 
