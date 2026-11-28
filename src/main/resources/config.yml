@@ -25,7 +25,6 @@ raiding:
 combat:
   friendly-fire: false
   ally-friendly-fire: false
-  truce-friendly-fire: false
 
 invites:
   expire-minutes: 30
