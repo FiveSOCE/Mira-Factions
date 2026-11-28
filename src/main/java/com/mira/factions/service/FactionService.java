@@ -971,7 +971,8 @@ public final class FactionService {
                 TerritoryType type = territoryType(loc);
                 if (type == TerritoryType.SAFEZONE || type == TerritoryType.WARZONE) {
                     special.add(type);
-                    out.append(type == TerritoryType.SAFEZONE ? "&aS" : "&cW");
+                    out.append(x == 0 && z == 0 ? "&f+" :
+                            type == TerritoryType.SAFEZONE ? "&aS" : "&cW");
                     continue;
                 }
                 Faction owner = owner(loc);
@@ -981,7 +982,8 @@ public final class FactionService {
                     String color = owner == mine ? "&a" :
                             relation(mine, owner) == Relation.ALLY ? "&b" :
                             relation(mine, owner) == Relation.ENEMY ? "&e" : "&7";
-                    out.append(color).append(marker);
+                    if (x == 0 && z == 0) out.append("&f+");
+                    else out.append(color).append(marker);
                 } else if (x == 0 && z == 0) out.append("&f+");
                 else out.append("&8-");
             }
