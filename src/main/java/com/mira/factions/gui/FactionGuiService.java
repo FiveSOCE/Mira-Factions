@@ -47,31 +47,26 @@ public final class FactionGuiService {
                 plugin.component("&5Faction Upgrades"));
         fill(inventory);
 
-        UpgradeType[] types = UpgradeType.values();
-        for (int i = 0; i < Math.min(UPGRADE_SLOTS.length, types.length); i++) {
-            UpgradeType type = types[i];
+        List<UpgradeType> types = Arrays.stream(UpgradeType.values())
+                .filter(UpgradeType::purchasable).toList();
+        for (int i = 0; i < Math.min(UPGRADE_SLOTS.length, types.size()); i++) {
+            UpgradeType type = types.get(i);
             int level = faction.upgrade(type);
             boolean max = level >= type.maxLevel();
             List<String> lore = new ArrayList<>();
-            lore.add("&7Category: &f" + category(type));
-            lore.add("&7Level: &f" + level + "/" + type.maxLevel());
-            lore.add("&7Current: &f" + effect(type, level));
-            if (!max) lore.add("&7Next: &f" + effect(type, level + 1));
-            lore.add("&7Faction Bank: &f" + plugin.economy().format(faction.bankBalance()));
-            if (max) {
-                lore.add("");
-                lore.add("&aMAX LEVEL");
-            } else {
-                lore.add("&7Next Cost: &6" + plugin.economy().format(service.upgradeCost(faction, type)));
-                lore.add("");
-                lore.add("&aClick to purchase next level");
-            }
-            inventory.setItem(UPGRADE_SLOTS[i], item(type.icon(), "&d" + type.display(), lore));
+            lore.add("&7Current Level: &f" + level + "/" + type.maxLevel());
+            double cost = service.upgradeCost(faction, type);
+            lore.add(max ? "&7Upgrade Cost: &aMAX LEVEL" :
+                    "&7Upgrade Cost: &6" + (cost > 0D ? plugin.economy().format(cost) : "Not configured"));
+            lore.add("&f");
+            lore.add("&7" + upgradeDescription(type));
+            lore.add("&f");
+            lore.add(max ? "&aMAX LEVEL" : "&aClick To Purchase");
+            inventory.setItem(UPGRADE_SLOTS[i], item(type.icon(), "&6&l" + type.display(), lore));
         }
-
-        inventory.setItem(49, item(Material.EMERALD, "&aFaction Bank",
-                List.of("&7Balance: &f" + plugin.economy().format(faction.bankBalance()),
-                        "&7Use &f/f money &7to deposit or withdraw")));
+        inventory.setItem(49, item(Material.EMERALD, "&aYour Balance",
+                List.of("&7Personal Wallet: &f" + plugin.economy().format(plugin.economy().balance(player)),
+                        "&7Upgrade purchases come from your balance.")));
         player.openInventory(inventory);
     }
 
@@ -199,11 +194,29 @@ public final class FactionGuiService {
     }
 
     public UpgradeType upgradeForSlot(int slot) {
-        UpgradeType[] types = UpgradeType.values();
-        for (int i = 0; i < Math.min(UPGRADE_SLOTS.length, types.length); i++) {
-            if (UPGRADE_SLOTS[i] == slot) return types[i];
+        List<UpgradeType> types = Arrays.stream(UpgradeType.values())
+                .filter(UpgradeType::purchasable).toList();
+        for (int i = 0; i < Math.min(UPGRADE_SLOTS.length, types.size()); i++) {
+            if (UPGRADE_SLOTS[i] == slot) return types.get(i);
         }
         return null;
+    }
+
+    private String upgradeDescription(UpgradeType type) {
+        return switch (type) {
+            case WARP_LIMIT -> "Adds more faction warp slots.";
+            case VAULT_SIZE -> "Expands the faction vault storage.";
+            case TNT_CAPACITY -> "Increases faction TNT bank capacity.";
+            case FLIGHT -> "Unlocks faction flight with MiraFly.";
+            case DAMAGE -> "Increases damage dealt in faction territory.";
+            case DEFENSE -> "Reduces incoming territory damage.";
+            case MOB_DROPS -> "Improves mob drop yield.";
+            case MOB_XP -> "Increases experience earned from mobs.";
+            case CROP_YIELD -> "Increases crop harvest rewards.";
+            case CROP_GROWTH -> "Improves crop growth rates.";
+            case SPAWNER_RATE -> "Increases spawner production rate.";
+            default -> "Legacy upgrade, no longer purchasable.";
+        };
     }
 
     public FactionPermission permissionForSlot(int slot) {
