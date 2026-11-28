@@ -33,6 +33,15 @@ public enum UpgradeType {
         this.maxLevel = maxLevel;
     }
 
+    // Keep historical enum values so existing saved upgrades remain loadable.
+    // Removed offerings are no longer purchasable or shown in /f upgrades.
+    public boolean purchasable() {
+        return switch (this) {
+            case POWER, MEMBER_LIMIT, SHIELD, POWER_REGEN, POWER_LOSS, ZONE_LIMIT, HOME_WARMUP, WARP_WARMUP -> false;
+            default -> true;
+        };
+    }
+
     public String display() { return display; }
     public Material icon() { return icon; }
     public int maxLevel() { return maxLevel; }
