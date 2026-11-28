@@ -925,29 +925,47 @@ public final class FactionService {
 
     public String map(Player viewer, int radius) {
         Chunk center = viewer.getLocation().getChunk();
-        StringBuilder out = new StringBuilder();
-        out.append("&8---- &dFaction Map &8----\n");
+        StringBuilder out = new StringBuilder("&8---- &dFaction Map &8----\\n");
         Faction mine = of(viewer.getUniqueId());
+        // Assign a unique single-character marker to every faction actually visible in the map.
+        // This legend never displays entries for claims outside the current view.
+        String symbols = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        Map<UUID, Character> markers = new LinkedHashMap<>();
+        Set<TerritoryType> special = EnumSet.noneOf(TerritoryType.class);
         for (int z = -radius; z <= radius; z++) {
             for (int x = -radius; x <= radius; x++) {
-                if (x == 0 && z == 0) { out.append("&f+"); continue; }
-                Location loc = new Location(viewer.getWorld(), (center.getX() + x) * 16.0, viewer.getLocation().getY(), (center.getZ() + z) * 16.0);
+                Location loc = new Location(viewer.getWorld(), (center.getX() + x) * 16.0,
+                        viewer.getLocation().getY(), (center.getZ() + z) * 16.0);
                 TerritoryType type = territoryType(loc);
-                if (type == TerritoryType.SAFEZONE) { out.append("&aS"); continue; }
-                if (type == TerritoryType.WARZONE) { out.append("&cW"); continue; }
-                Faction owner = owner(loc);
-                if (owner == null) { out.append("&7-"); continue; }
-                if (owner == mine) out.append("&a#");
-                else switch (relation(mine, owner)) {
-                    case ALLY -> out.append("&d#");
-                    case TRUCE -> out.append("&b#");
-                    case ENEMY -> out.append("&c#");
-                    default -> out.append("&e#");
+                if (type == TerritoryType.SAFEZONE || type == TerritoryType.WARZONE) {
+                    special.add(type);
+                    out.append(type == TerritoryType.SAFEZONE ? "&aS" : "&cW");
+                    continue;
                 }
+                Faction owner = owner(loc);
+                if (owner != null) {
+                    char marker = markers.computeIfAbsent(owner.id(), id ->
+                            symbols.charAt(markers.size() % symbols.length()));
+                    String color = owner == mine ? "&a" :
+                            relation(mine, owner) == Relation.ALLY ? "&b" :
+                            relation(mine, owner) == Relation.ENEMY ? "&e" : "&7";
+                    out.append(color).append(marker);
+                } else if (x == 0 && z == 0) out.append("&f+");
+                else out.append("&8-");
             }
-            out.append("\n");
+            out.append("\\n");
         }
-        out.append("&7+ You  &a# Yours  &d# Ally  &b# Truce  &c# Enemy  &e# Neutral  &aS Safe  &cW War");
+        out.append("&f+ You");
+        for (Map.Entry<UUID, Character> entry : markers.entrySet()) {
+            Faction faction = byId(entry.getKey());
+            if (faction == null) continue;
+            String color = faction == mine ? "&a" :
+                    relation(mine, faction) == Relation.ALLY ? "&b" :
+                    relation(mine, faction) == Relation.ENEMY ? "&e" : "&7";
+            out.append("  ").append(color).append(entry.getValue()).append(" ").append(faction.name());
+        }
+        if (special.contains(TerritoryType.SAFEZONE)) out.append("  &aS Safezone");
+        if (special.contains(TerritoryType.WARZONE)) out.append("  &cW Warzone");
         return out.toString();
     }
 
