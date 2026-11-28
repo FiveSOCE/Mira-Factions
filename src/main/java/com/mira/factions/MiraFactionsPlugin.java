@@ -30,7 +30,19 @@ public final class MiraFactionsPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        // Vault provides the API bridge; an economy plugin must actually register a provider.
+        // Do not initialize faction banks or command services without a working economy.
+        if (!getServer().getPluginManager().isPluginEnabled("Vault")) {
+            getLogger().severe("Vault is required for MiraFactions. Install a Paper 1.18.2-compatible Vault build.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
         economy = new EconomyHook(this);
+        if (!economy.available()) {
+            getLogger().severe("No Vault economy provider found. Vault alone is not an economy! Install a compatible economy plugin (for example EssentialsX with its economy enabled), then restart.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
         factions = new FactionService(this, economy);
         history = new FactionHistoryService(this);
         landValue = new FactionLandValueService(this);
