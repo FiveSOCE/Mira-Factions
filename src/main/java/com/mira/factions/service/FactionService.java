@@ -1417,8 +1417,9 @@ public final class FactionService {
                 if (relationPerms != null) for (String key : relationPerms.getKeys(false)) {
                     Set<Relation> set = EnumSet.noneOf(Relation.class);
                     for (String relation : relationPerms.getStringList(key)) {
-                        Relation existing = savedRelation(relation);
-                        if (existing != Relation.NEUTRAL) set.add(existing);
+                        if (relation.equalsIgnoreCase("TRUCE")) continue;
+                        // NEUTRAL is a valid protection permission; keep it when migrating.
+                        set.add(savedRelation(relation));
                     }
                     faction.relationAccess().put(FactionPermission.valueOf(key), set);
                 }
