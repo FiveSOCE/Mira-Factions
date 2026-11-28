@@ -3,6 +3,9 @@ on:
   push:
     branches: ['compat/1.18.2']
   workflow_dispatch:
+concurrency:
+  group: mirafactions-legacy-release
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
@@ -36,8 +39,15 @@ jobs:
           path: build/libs/MiraFactions_1.18.2.jar
           if-no-files-found: error
       - name: Publish legacy prerelease
+        # Never overwrite the versioned testing asset from an obsolete intermediate commit.
+        if: success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          CURRENT=$(git ls-remote origin refs/heads/compat/1.18.2 | cut -f1)
+          if [ "$CURRENT" != "$GITHUB_SHA" ]; then
+            echo "This run is not the current compatibility branch tip; skipping release upload."
+            exit 0
+          fi
           gh release view dev-1.18.2 >/dev/null 2>&1 || gh release create dev-1.18.2 --prerelease --title 'MiraFactions Paper 1.18.2 development' --notes 'Paper 1.18.2/Java 17 compatibility target. Requires Vault and a working economy provider. In-game feature parity testing still required.' --target "$GITHUB_SHA"
           gh release upload dev-1.18.2 build/libs/MiraFactions_1.18.2.jar --clobber
