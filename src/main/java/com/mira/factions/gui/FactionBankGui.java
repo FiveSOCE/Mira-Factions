@@ -18,7 +18,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,7 +27,7 @@ import java.util.UUID;
 public final class FactionBankGui implements Listener {
     private final MiraFactionsPlugin plugin;
     private final FactionService service;
-    private final Map<UUID, Pending> pending = new HashMap<>();
+    private final Map<UUID, Pending> pending = new ConcurrentHashMap<>();
 
     private enum Transaction { MONEY_WITHDRAW, MONEY_DEPOSIT, XP_WITHDRAW, XP_DEPOSIT }
     private record Pending(UUID factionId, Transaction transaction) { }
