@@ -59,6 +59,38 @@ The legacy 1.18.2 branch includes these user-facing changes:
 
 A successful Java 17 / Paper 1.18.2 compilation is required before replacing a tested server JAR; retain a backup of `plugins/MiraFactions/factions.yml` before upgrading because the XP bank adds `xpBankLevels` to faction persistence. These changes require gameplay verification after compilation.
 
+## Paper 1.18.2: upgrades, faction profiles and claim messages
+
+### /f upgrades
+
+Upgrade purchases now debit the **buying player's personal Vault economy balance**, not the faction bank. The `/f upgrades` inventory shows only: Warp Limit, Vault Size, TNT Capacity, Faction Flight, Territory Damage, Territory Defense, Mob Drops, Mob XP, Crop Yield, Crop Growth, and Spawner Rate.
+
+Power, Member Limit, Shield, Power Regen, Power Loss, Zone Limit, Home Warmup and Warp Warmup are **no longer offered**. Their saved enum values and purchased levels remain readable for existing factions to avoid breaking data during upgrade.
+
+Each item displays gold bold name, current level, cost of next level, a plain-English description, and a click-to-purchase prompt. The footer displays the player's balance.
+
+Prices live in `plugins/MiraFactions/upgrade-prices.yml`; the default resource file is copied automatically the first time it is needed. Every upgrade key contains a list of **exact per-level costs** (first value for level 1, second for level 2, etc.). Prices are read on opening the GUI and purchase; configure only positive finite values. Example:
+
+```yaml
+upgrades:
+  warp_limit: [7500, 15000, 30000, 60000, 120000]
+  flight: [30000]
+```
+
+### /f show [faction]
+
+Displays a faction-name header, FTop wealth rank and total wealth, leader and co-leaders, elapsed creation time (days and hours), land/current power/max power, named enemy factions, and the online/offline roster with counts.
+
+### /f list [page]
+
+Lists ten factions per page, ordered by number of **currently online members** (highest first, alphabetical ties). Each line shows `FactionName [online/total]`. `/f list 2` selects page two.
+
+### Claim notifications
+
+Every successful `/f claim`, radius claim or `/f autoclaim` claim announces the claimant, chunk coordinates, world and starting block coordinates privately to online members of that faction. Failed/already-owned claims do not broadcast.
+
+**Test after rebuilding:** verify personal balance charged exactly once, faction bank unchanged, max-level handling, price editing, `/f show` roster/rank, list sorting and claim announcements. Restart after backing up `plugins/MiraFactions/factions.yml` before validating persistence.
+
 ## Faction Model
 
 Faction ranks are:
